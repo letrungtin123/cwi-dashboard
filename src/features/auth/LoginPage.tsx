@@ -39,19 +39,19 @@ export function LoginPage() {
         <div className="login-brand">
           <img src={logoSrc} alt="CWI" />
           <div>
-            <p>CEO Workforce Index</p>
-            <h1 id="login-title">Dashboard quản trị</h1>
+            <p>Chỉ số Nguồn lực Doanh nghiệp</p>
+            <h1 id="login-title">Bảng quản trị</h1>
           </div>
         </div>
 
-        <div className="login-context" aria-label="Dashboard scope">
-          <span>Survey submissions</span>
-          <span>Admin workspace</span>
+        <div className="login-context" aria-label="Phạm vi quản trị">
+          <span>Dữ liệu khảo sát</span>
+          <span>Khu vực quản trị</span>
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>
           <label className="field-label" htmlFor="email">
-            Email
+            Thư điện tử quản trị
           </label>
           <div className="input-wrap">
             <Mail aria-hidden="true" size={18} />

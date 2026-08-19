@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { BarChart3, LogOut, Menu, PanelLeftClose, ShieldCheck, UsersRound, X } from 'lucide-react'
+import { BarChart3, LogOut, Menu, X } from 'lucide-react'
 import logoSrc from '@/assets/cwi-logo.svg'
 import type { AdminUser } from '@/types'
 
@@ -11,6 +11,7 @@ type DashboardShellProps = {
 
 export function DashboardShell({ children, onLogout, user }: DashboardShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const roleLabel = user.role === 'admin' ? 'Quản trị viên' : 'Người xem'
 
   return (
     <div className="dashboard-shell">
@@ -24,14 +25,10 @@ export function DashboardShell({ children, onLogout, user }: DashboardShellProps
           </button>
         </div>
 
-        <nav className="sidebar-nav" aria-label="Dashboard">
+        <nav className="sidebar-nav" aria-label="Điều hướng bảng quản trị">
           <button className="nav-item active" type="button">
             <BarChart3 aria-hidden="true" size={18} />
             <span>Tổng quan khảo sát</span>
-          </button>
-          <button className="nav-item" disabled type="button">
-            <UsersRound aria-hidden="true" size={18} />
-            <span>Admin users</span>
           </button>
         </nav>
 
@@ -40,7 +37,7 @@ export function DashboardShell({ children, onLogout, user }: DashboardShellProps
             <div className="avatar">{(user.displayName || user.email).slice(0, 1).toUpperCase()}</div>
             <div>
               <strong>{user.displayName || user.email}</strong>
-              <span>{user.role}</span>
+              <span>{roleLabel}</span>
             </div>
           </div>
           <button className="logout-button" onClick={() => void onLogout()} type="button">
@@ -57,18 +54,9 @@ export function DashboardShell({ children, onLogout, user }: DashboardShellProps
               <Menu aria-hidden="true" size={20} />
             </button>
             <div>
-              <p>CEO Workforce Index</p>
-              <h1>Survey submissions</h1>
+              <p>Chỉ số Nguồn lực Doanh nghiệp</p>
+              <h1>Lượt gửi khảo sát</h1>
             </div>
-          </div>
-          <div className="topbar-right">
-            <div className="secure-chip">
-              <ShieldCheck aria-hidden="true" size={16} />
-              <span>Admin session</span>
-            </div>
-            <button className="icon-button desktop-only" title="Sidebar" type="button">
-              <PanelLeftClose aria-hidden="true" size={18} />
-            </button>
           </div>
         </header>
 

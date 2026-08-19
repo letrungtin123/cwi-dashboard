@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Briefcase,
@@ -25,19 +25,20 @@ type RoundtableOption = 'all' | 'true' | 'false'
 type SelectOption<T extends string> = { description?: string; label: string; value: T }
 
 const pageSize = 50
+const searchDebounceMs = 350
 
 const statusMeta: Record<SubmissionStatus, { className: string; label: string }> = {
   full_private_report: {
     className: 'status-green',
-    label: 'Gửi cả 2 phần',
+    label: 'Gửi đủ hai phần',
   },
   part1_only: {
     className: 'status-blue',
-    label: 'Chỉ Part 1',
+    label: 'Chỉ Phần 1',
   },
   part2_refused_privacy: {
     className: 'status-amber',
-    label: 'Part 2 không đồng ý',
+    label: 'Phần 2 không đồng ý',
   },
 }
 
@@ -48,10 +49,10 @@ const privacyLabels: Record<PrivacyConsent, string> = {
 }
 
 const statusOptions: Array<SelectOption<StatusOption>> = [
-  { description: 'Hiển thị toàn bộ submission', label: 'Tất cả trạng thái', value: 'all' },
-  { description: 'User chỉ nhận báo cáo Phần 1', label: 'Chỉ Part 1', value: 'part1_only' },
-  { description: 'Đã làm Part 2 nhưng không đồng ý bảo mật', label: 'Part 2 không đồng ý', value: 'part2_refused_privacy' },
-  { description: 'Đồng ý bảo mật và gửi đủ 2 phần', label: 'Gửi đủ 2 phần', value: 'full_private_report' },
+  { description: 'Hiển thị toàn bộ lượt gửi', label: 'Tất cả trạng thái', value: 'all' },
+  { description: 'Người gửi chỉ nhận báo cáo Phần 1', label: 'Chỉ Phần 1', value: 'part1_only' },
+  { description: 'Đã làm Phần 2 nhưng không đồng ý bảo mật', label: 'Phần 2 không đồng ý', value: 'part2_refused_privacy' },
+  { description: 'Đồng ý bảo mật và gửi đủ hai phần', label: 'Gửi đủ hai phần', value: 'full_private_report' },
 ]
 
 const roundtableOptions: Array<SelectOption<RoundtableOption>> = [
@@ -70,27 +71,29 @@ function buildFilters(search: string, status: StatusOption, roundtable: Roundtab
   }
 }
 
+function questionTypeLabel(type: string) {
+  if (type === 'likert') return 'Điểm 1-5'
+  if (type === 'mcq') return 'Lựa chọn'
+  if (type === 'url') return 'Đường dẫn'
+  return 'Câu trả lời'
+}
+
+
 function StatusBadge({ status }: { status: SubmissionStatus }) {
   const meta = statusMeta[status]
   return <span className={`status-badge ${meta.className}`}>{meta.label}</span>
 }
 
-function ScorePill({ label, value }: { label: string; value: number }) {
-  return (
-    <span className="score-pill">
-      {label}: <strong>{value}</strong>
-    </span>
-  )
-}
 
-function StatTile({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+function StatTile({ icon, label, tooltip, value }: { icon: ReactNode; label: string; tooltip: string; value: string }) {
   return (
-    <article className="stat-tile">
+    <article aria-label={`${label}: ${value}. ${tooltip}`} className="stat-tile" tabIndex={0}>
       <div className="stat-icon">{icon}</div>
       <div>
         <p>{label}</p>
         <strong>{value}</strong>
       </div>
+      <span className="stat-tooltip" role="tooltip">{tooltip}</span>
     </article>
   )
 }
@@ -200,8 +203,8 @@ function StatsSkeleton() {
 
 function TableSkeleton() {
   return (
-    <div className="table-loading" role="status" aria-label="Đang tải submissions">
-      <span className="sr-only">Đang tải submissions</span>
+    <div className="table-loading" role="status" aria-label="Đang tải lượt gửi">
+      <span className="sr-only">Đang tải lượt gửi</span>
       <div className="table-skeleton desktop-table">
         {Array.from({ length: 7 }, (_, index) => (
           <div className="table-skeleton-row" key={index}>
@@ -250,7 +253,7 @@ function EmptyState({ error, onRetry }: { error: string; onRetry: () => void }) 
   return (
     <div className="empty-state">
       <CircleAlert aria-hidden="true" size={30} />
-      <h2>{error ? 'Không tải được dữ liệu' : 'Chưa có submission'}</h2>
+      <h2>{error ? 'Không tải được dữ liệu' : 'Chưa có lượt gửi'}</h2>
       <p>{error || 'Chưa có dữ liệu phù hợp để hiển thị.'}</p>
       {error ? (
         <button className="secondary-button" onClick={onRetry} type="button">
@@ -271,10 +274,10 @@ function SubmissionTable({ items, onSelect }: { items: SubmissionListItem[]; onS
             <tr>
               <th>Người gửi</th>
               <th>Trạng thái</th>
-              <th>Điểm</th>
+              <th>Số câu</th>
               <th>Roundtable</th>
               <th>Thời gian</th>
-              <th aria-label="Action" />
+              <th aria-label="Thao tác" />
             </tr>
           </thead>
           <tbody>
@@ -294,10 +297,9 @@ function SubmissionTable({ items, onSelect }: { items: SubmissionListItem[]; onS
                   </div>
                 </td>
                 <td>
-                  <div className="score-cell">
-                    <ScorePill label="Overall" value={item.overallScore} />
-                    <ScorePill label="Scale" value={item.scaleScore} />
-                    <span>{item.answersCount} câu</span>
+                  <div className="count-cell">
+                    <strong>{item.answersCount}</strong>
+                    <span>câu trả lời</span>
                   </div>
                 </td>
                 <td>
@@ -338,9 +340,8 @@ function SubmissionTable({ items, onSelect }: { items: SubmissionListItem[]; onS
             <StatusBadge status={item.submissionStatus} />
             <p>{item.email}</p>
             <div className="submission-card-meta">
-              <ScorePill label="Overall" value={item.overallScore} />
-              <span>{item.answersCount} câu</span>
-              <span>{item.roundtableRegistered ? 'Roundtable' : 'Không roundtable'}</span>
+              <span>{item.answersCount} câu trả lời</span>
+              <span>{item.roundtableRegistered ? 'Có đăng ký Roundtable' : 'Không đăng ký Roundtable'}</span>
             </div>
             <time>{formatDateTime(item.submittedAt)}</time>
           </motion.article>
@@ -350,15 +351,31 @@ function SubmissionTable({ items, onSelect }: { items: SubmissionListItem[]; onS
   )
 }
 
-function SubmissionDetailDrawer({ detail, isLoading, onClose }: { detail: SubmissionDetail | null; isLoading: boolean; onClose: () => void }) {
+function SubmissionDetailDrawer({
+  detail,
+  error,
+  isLoading,
+  onClose,
+  onRetry,
+  open,
+}: {
+  detail: SubmissionDetail | null
+  error: string
+  isLoading: boolean
+  onClose: () => void
+  onRetry: () => void
+  open: boolean
+}) {
+  const title = detail?.fullName || (isLoading ? 'Đang tải' : 'Chi tiết lượt gửi')
+
   return (
     <>
-      <button className="drawer-backdrop" data-open={Boolean(detail) || isLoading} onClick={onClose} type="button" />
-      <aside className="detail-drawer" data-open={Boolean(detail) || isLoading} aria-label="Chi tiết submission">
+      <button aria-label="Đóng chi tiết lượt gửi" className="drawer-backdrop" data-open={open} onClick={onClose} type="button" />
+      <aside className="detail-drawer" data-open={open} aria-label="Chi tiết lượt gửi">
         <div className="drawer-header">
           <div>
-            <p>Submission detail</p>
-            <h2>{detail?.fullName || 'Đang tải'}</h2>
+            <p>Chi tiết lượt gửi</p>
+            <h2>{title}</h2>
           </div>
           <button className="icon-button" onClick={onClose} title="Đóng" type="button">
             <X aria-hidden="true" size={18} />
@@ -367,13 +384,26 @@ function SubmissionDetailDrawer({ detail, isLoading, onClose }: { detail: Submis
 
         {isLoading ? <DrawerSkeleton /> : null}
 
-        {detail && !isLoading ? (
+        {error && !isLoading ? (
+          <div className="drawer-content">
+            <section className="drawer-error">
+              <CircleAlert aria-hidden="true" size={30} />
+              <h3>Không tải được chi tiết</h3>
+              <p>{error}</p>
+              <button className="secondary-button" onClick={onRetry} type="button">
+                <RefreshCw aria-hidden="true" size={16} />
+                <span>Tải lại</span>
+              </button>
+            </section>
+          </div>
+        ) : null}
+
+        {detail && !isLoading && !error ? (
           <div className="drawer-content">
             <section className="detail-section detail-section-hero">
               <div className="detail-summary">
                 <StatusBadge status={detail.submissionStatus} />
-                <ScorePill label="Overall" value={detail.overallScore} />
-                <ScorePill label="Scale" value={detail.scaleScore} />
+                <span className="answer-count-pill"><strong>{detail.answersCount}</strong> câu trả lời</span>
               </div>
               <p>{detail.statusNote}</p>
             </section>
@@ -399,7 +429,7 @@ function SubmissionDetailDrawer({ detail, isLoading, onClose }: { detail: Submis
 
             {detail.roundtableRegistration ? (
               <section className="detail-section">
-                <h3>Roundtable</h3>
+                <h3>Roundtable lãnh đạo</h3>
                 <p>{detail.roundtableRegistration.fullName} · {detail.roundtableRegistration.email}</p>
               </section>
             ) : null}
@@ -412,8 +442,8 @@ function SubmissionDetailDrawer({ detail, isLoading, onClose }: { detail: Submis
                     <div className="answer-index">{answer.idx}</div>
                     <div>
                       <div className="answer-meta">
-                        <span>Part {answer.part}</span>
-                        <span>{answer.questionType}</span>
+                        <span>Phần {answer.part}</span>
+                        <span>{questionTypeLabel(answer.questionType)}</span>
                       </div>
                       <h4>{answer.questionText}</h4>
                       <p>{answer.answerText || valueToText(answer.answerValue)}</p>
@@ -424,10 +454,6 @@ function SubmissionDetailDrawer({ detail, isLoading, onClose }: { detail: Submis
               </div>
             </section>
 
-            <section className="detail-section">
-              <h3>Domain scores</h3>
-              <pre>{valueToText(detail.domainScores)}</pre>
-            </section>
           </div>
         ) : null}
       </aside>
@@ -449,6 +475,13 @@ export function SubmissionsPage() {
   const [selectedId, setSelectedId] = useState('')
   const [detail, setDetail] = useState<SubmissionDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [detailError, setDetailError] = useState('')
+  const [detailReloadKey, setDetailReloadKey] = useState(0)
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => setSearch(draftSearch.trim()), searchDebounceMs)
+    return () => window.clearTimeout(timeoutId)
+  }, [draftSearch])
 
   const filters = useMemo(() => buildFilters(search, status, roundtable), [roundtable, search, status])
 
@@ -476,18 +509,26 @@ export function SubmissionsPage() {
   useEffect(() => {
     if (!selectedId) {
       setDetail(null)
+      setDetailError('')
+      setDetailLoading(false)
       return
     }
 
     let active = true
+    setDetail(null)
+    setDetailError('')
     setDetailLoading(true)
 
     getSubmissionDetail(selectedId)
       .then((nextDetail) => {
         if (active) setDetail(nextDetail)
       })
-      .catch(() => {
-        if (active) setDetail(null)
+      .catch((caught) => {
+        if (!active) return
+
+        const message = caught instanceof Error ? caught.message : 'Không tải được chi tiết lượt gửi.'
+        setDetail(null)
+        setDetailError(message || 'Không tải được chi tiết lượt gửi.')
       })
       .finally(() => {
         if (active) setDetailLoading(false)
@@ -496,7 +537,7 @@ export function SubmissionsPage() {
     return () => {
       active = false
     }
-  }, [selectedId])
+  }, [detailReloadKey, selectedId])
 
   async function loadMore() {
     const before = items.at(-1)?.submittedAt
@@ -512,21 +553,16 @@ export function SubmissionsPage() {
     }
   }
 
-  function handleFilterSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setSearch(draftSearch.trim())
-  }
-
   return (
     <main className="dashboard-main">
       {isLoading && !stats ? (
         <StatsSkeleton />
       ) : (
-        <section className="stats-grid" aria-label="Survey stats">
-          <StatTile icon={<UsersRound aria-hidden="true" size={20} />} label="Tổng submission" value={formatNumber(stats?.totalSubmissions ?? 0)} />
-          <StatTile icon={<FileText aria-hidden="true" size={20} />} label="Chỉ Part 1" value={formatNumber(stats?.part1Only ?? 0)} />
-          <StatTile icon={<CircleAlert aria-hidden="true" size={20} />} label="Không đồng ý bảo mật" value={formatNumber(stats?.part2RefusedPrivacy ?? 0)} />
-          <StatTile icon={<CheckCircle2 aria-hidden="true" size={20} />} label="Gửi đủ 2 phần" value={formatNumber(stats?.fullPrivateReport ?? 0)} />
+        <section className="stats-grid" aria-label="Thống kê khảo sát">
+          <StatTile icon={<UsersRound aria-hidden="true" size={20} />} label="Tổng lượt gửi" tooltip="Tổng số lượt khảo sát đã được lưu trong hệ thống, bao gồm mọi trạng thái gửi." value={formatNumber(stats?.totalSubmissions ?? 0)} />
+          <StatTile icon={<FileText aria-hidden="true" size={20} />} label="Chỉ Phần 1" tooltip="Người dùng hoàn thành Phần 1 và chọn nhận báo cáo Phần 1, không gửi dữ liệu Phần 2." value={formatNumber(stats?.part1Only ?? 0)} />
+          <StatTile icon={<CircleAlert aria-hidden="true" size={20} />} label="Không đồng ý bảo mật" tooltip="Người dùng đã trả lời Phần 2 nhưng không đồng ý điều khoản bảo mật dữ liệu." value={formatNumber(stats?.part2RefusedPrivacy ?? 0)} />
+          <StatTile icon={<CheckCircle2 aria-hidden="true" size={20} />} label="Gửi đủ hai phần" tooltip="Người dùng hoàn thành cả hai phần và đồng ý bảo mật dữ liệu để nhận báo cáo đầy đủ." value={formatNumber(stats?.fullPrivateReport ?? 0)} />
         </section>
       )}
 
@@ -534,7 +570,7 @@ export function SubmissionsPage() {
         <div className="surface-head">
           <div>
             <p>Danh sách</p>
-            <h2>Submissions</h2>
+            <h2>Lượt gửi khảo sát</h2>
           </div>
           <button className="secondary-button" onClick={() => void loadInitial()} type="button">
             <RefreshCw aria-hidden="true" size={16} />
@@ -542,22 +578,20 @@ export function SubmissionsPage() {
           </button>
         </div>
 
-        <form className="filter-bar" onSubmit={handleFilterSubmit}>
+        <div className="filter-bar">
           <div className="search-box">
             <Search aria-hidden="true" size={18} />
             <input
+              aria-label="Tìm kiếm lượt gửi"
               onChange={(event) => setDraftSearch(event.target.value)}
-              placeholder="Tìm tên, email, chức vụ"
+              placeholder="Tìm tên, thư điện tử, chức vụ"
+              type="search"
               value={draftSearch}
             />
           </div>
           <CustomSelect label="Trạng thái" onChange={setStatus} options={statusOptions} value={status} />
           <CustomSelect label="Roundtable" onChange={setRoundtable} options={roundtableOptions} value={roundtable} />
-          <button className="primary-button compact" type="submit">
-            <Search aria-hidden="true" size={16} />
-            <span>Lọc</span>
-          </button>
-        </form>
+        </div>
 
         {isLoading ? <TableSkeleton /> : null}
         {!isLoading && (error || items.length === 0) ? <EmptyState error={error} onRetry={() => void loadInitial()} /> : null}
@@ -572,8 +606,14 @@ export function SubmissionsPage() {
           </div>
         ) : null}
       </section>
-
-      <SubmissionDetailDrawer detail={detail} isLoading={detailLoading} onClose={() => setSelectedId('')} />
+      <SubmissionDetailDrawer
+        detail={detail}
+        error={detailError}
+        isLoading={detailLoading}
+        onClose={() => setSelectedId('')}
+        onRetry={() => setDetailReloadKey((current) => current + 1)}
+        open={Boolean(selectedId)}
+      />
     </main>
   )
 }

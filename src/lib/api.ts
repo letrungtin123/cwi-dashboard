@@ -65,11 +65,11 @@ async function request<T>(path: string, init: RequestInit = {}, options: { csrf?
 
   if (!response.ok) {
     const error = payload && 'error' in payload ? payload.error : undefined
-    throw new ApiError(response.status, error?.code ?? 'request_failed', error?.message ?? 'Request failed.')
+    throw new ApiError(response.status, error?.code ?? 'request_failed', error?.message ?? 'Yêu cầu không thành công.')
   }
 
   if (!payload || !('data' in payload)) {
-    throw new ApiError(response.status, 'invalid_response', 'API response is invalid.')
+    throw new ApiError(response.status, 'invalid_response', 'Phản hồi từ hệ thống không hợp lệ.')
   }
 
   return payload.data
