@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   CircleAlert,
+  Download,
   Eye,
   FileText,
   Mail,
@@ -16,9 +17,9 @@ import {
   UsersRound,
   X,
 } from 'lucide-react'
-import { getSubmissionDetail, getSubmissionStats, listSubmissions } from '@/lib/api'
+import { apiUrl, getSubmissionDetail, getSubmissionStats, listSubmissions } from '@/lib/api'
 import { formatDateTime, formatNumber, valueToText } from '@/lib/format'
-import type { PrivacyConsent, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus } from '@/types'
+import type { PrivacyConsent, ReportSummary, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus } from '@/types'
 
 type StatusOption = 'all' | SubmissionStatus
 type RoundtableOption = 'all' | 'true' | 'false'
@@ -78,12 +79,25 @@ function questionTypeLabel(type: string) {
   return 'Câu trả lời'
 }
 
-
 function StatusBadge({ status }: { status: SubmissionStatus }) {
   const meta = statusMeta[status]
   return <span className={`status-badge ${meta.className}`}>{meta.label}</span>
 }
 
+function ReportBadge({ report }: { report: ReportSummary }) {
+  return <span className={`report-badge report-${report.status}`}>{report.label}</span>
+}
+
+function ReportDownloadLink({ report }: { report: ReportSummary }) {
+  if (!report.pdfDownloadUrl) return null
+
+  return (
+    <a className="mini-link-button" href={apiUrl(report.pdfDownloadUrl)} rel="noreferrer" target="_blank" title="Tải báo cáo PDF">
+      <Download aria-hidden="true" size={15} />
+      <span>Tải PDF</span>
+    </a>
+  )
+}
 
 function StatTile({ icon, label, tooltip, value }: { icon: ReactNode; label: string; tooltip: string; value: string }) {
   return (
@@ -212,6 +226,7 @@ function TableSkeleton() {
             <SkeletonLine className="skeleton-status" />
             <SkeletonLine className="skeleton-score" />
             <SkeletonLine className="skeleton-chip" />
+            <SkeletonLine className="skeleton-report" />
             <SkeletonLine className="skeleton-date" />
             <SkeletonLine className="skeleton-action" />
           </div>
@@ -276,6 +291,7 @@ function SubmissionTable({ items, onSelect }: { items: SubmissionListItem[]; onS
               <th>Trạng thái</th>
               <th>Số câu</th>
               <th>Roundtable</th>
+              <th>Báo cáo</th>
               <th>Thời gian</th>
               <th aria-label="Thao tác" />
             </tr>
@@ -307,6 +323,12 @@ function SubmissionTable({ items, onSelect }: { items: SubmissionListItem[]; onS
                     {item.roundtableRegistered ? 'Có đăng ký' : 'Không'}
                   </span>
                 </td>
+                <td>
+                  <div className="report-cell">
+                    <ReportBadge report={item.report} />
+                    <ReportDownloadLink report={item.report} />
+                  </div>
+                </td>
                 <td>{formatDateTime(item.submittedAt)}</td>
                 <td>
                   <button className="icon-button" onClick={() => onSelect(item.id)} title="Xem chi tiết" type="button">
@@ -337,8 +359,12 @@ function SubmissionTable({ items, onSelect }: { items: SubmissionListItem[]; onS
                 <ChevronRight aria-hidden="true" size={18} />
               </button>
             </div>
-            <StatusBadge status={item.submissionStatus} />
+            <div className="submission-card-statuses">
+              <StatusBadge status={item.submissionStatus} />
+              <ReportBadge report={item.report} />
+            </div>
             <p>{item.email}</p>
+            <ReportDownloadLink report={item.report} />
             <div className="submission-card-meta">
               <span>{item.answersCount} câu trả lời</span>
               <span>{item.roundtableRegistered ? 'Có đăng ký Roundtable' : 'Không đăng ký Roundtable'}</span>
@@ -403,9 +429,14 @@ function SubmissionDetailDrawer({
             <section className="detail-section detail-section-hero">
               <div className="detail-summary">
                 <StatusBadge status={detail.submissionStatus} />
+                <ReportBadge report={detail.report} />
                 <span className="answer-count-pill"><strong>{detail.answersCount}</strong> câu trả lời</span>
               </div>
               <p>{detail.statusNote}</p>
+              <div className="detail-report-actions">
+                <ReportDownloadLink report={detail.report} />
+                {detail.report.errorMessage ? <span className="report-error-note">{detail.report.errorMessage}</span> : null}
+              </div>
             </section>
 
             <section className="detail-grid">

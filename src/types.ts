@@ -15,6 +15,17 @@ export type AuthSession = {
 
 export type SubmissionStatus = 'part1_only' | 'part2_refused_privacy' | 'full_private_report'
 export type PrivacyConsent = 'yes' | 'no' | 'not_applicable'
+export type ReportStatus = 'not_started' | 'generating' | 'completed' | 'failed' | 'skipped'
+
+export type ReportSummary = {
+  errorMessage: string | null
+  jobId: string | null
+  label: string
+  pdfAvailable: boolean
+  pdfDownloadUrl: string | null
+  status: ReportStatus
+  updatedAt: string | null
+}
 
 export type SubmissionListItem = {
   answersCount: number
@@ -26,6 +37,7 @@ export type SubmissionListItem = {
   part2Completed: boolean
   position: string
   privacyConsent: PrivacyConsent
+  report: ReportSummary
   roundtableRegistered: boolean
   scaleScore: number
   statusNote: string

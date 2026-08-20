@@ -31,6 +31,11 @@ function readCookie(name: string) {
   return cookie ? decodeURIComponent(cookie.slice(encodedName.length)) : ''
 }
 
+export function apiUrl(path: string) {
+  if (/^https?:\/\//i.test(path)) return path
+  return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
+}
+
 export function setCsrfToken(token: string) {
   csrfTokenMemory = token
 }
@@ -51,7 +56,7 @@ async function request<T>(path: string, init: RequestInit = {}, options: { csrf?
     headers.set('x-csrf-token', getCsrfToken())
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(apiUrl(path), {
     ...init,
     credentials: 'include',
     headers,
