@@ -3,7 +3,8 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? '/dashboard/' : '/',
   plugins: [react(), tailwindcss()],
   preview: {
     host: 'localhost',
@@ -20,4 +21,4 @@ export default defineConfig({
     port: 5680,
     strictPort: true,
   },
-})
+}))
