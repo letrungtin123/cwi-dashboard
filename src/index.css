@@ -1506,6 +1506,121 @@ td:nth-child(7) {
   }
 }
 
+
+.roundtable-filter-bar {
+  grid-template-columns: minmax(280px, 1fr) 240px;
+}
+
+.roundtable-table table {
+  min-width: 1080px;
+}
+
+.roundtable-table th:nth-child(1),
+.roundtable-table td:nth-child(1) {
+  width: 25%;
+}
+
+.roundtable-table th:nth-child(2),
+.roundtable-table td:nth-child(2) {
+  width: 28%;
+}
+
+.roundtable-table th:nth-child(3),
+.roundtable-table td:nth-child(3) {
+  width: 31%;
+}
+
+.roundtable-table th:nth-child(4),
+.roundtable-table td:nth-child(4) {
+  width: 12%;
+}
+
+.roundtable-table th:nth-child(5),
+.roundtable-table td:nth-child(5) {
+  width: 56px;
+}
+
+.roundtable-skeleton-row {
+  grid-template-columns: 25% 28% 31% 12% 38px;
+}
+
+.roundtable-link-badge,
+.source-pill {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.2;
+  max-width: 100%;
+  padding: 6px 9px;
+  width: fit-content;
+}
+
+.roundtable-link-badge.is-linked {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.roundtable-link-badge.is-standalone {
+  background: #fff8e7;
+  color: #a15c07;
+}
+
+.source-pill {
+  background: #eef4ff;
+  color: var(--cwi-blue-dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roundtable-linked-summary {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.meta-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.meta-list div {
+  background: #f8fafc;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.meta-list dt,
+.meta-list dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.meta-list dt {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.meta-list dd {
+  color: #243042;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.meta-list.compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 @media (max-width: 1180px) {
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1645,6 +1760,10 @@ td:nth-child(7) {
 }
 
 @media (max-width: 640px) {
+  .meta-list.compact {
+    grid-template-columns: 1fr;
+  }
+
   .login-page {
     align-items: stretch;
     padding: 14px;

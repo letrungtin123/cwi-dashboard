@@ -62,6 +62,8 @@ export type SubmissionDetail = SubmissionListItem & {
   roundtableRegistration: {
     email: string
     fullName: string
+    id: string
+    position: string | null
     registeredAt: string
   } | null
   source: string
@@ -83,4 +85,49 @@ export type SubmissionFilters = {
   roundtable?: 'true' | 'false'
   search?: string
   status?: SubmissionStatus
+}
+
+export type RoundtableLinkStatus = 'linked' | 'standalone'
+
+export type RoundtableSubmissionSummary = {
+  answersCount: number
+  email: string
+  fullName: string
+  id: string
+  position: string
+  privacyConsent: PrivacyConsent
+  report: ReportSummary
+  statusNote: string
+  submittedAt: string
+  submissionStatus: SubmissionStatus
+}
+
+export type RoundtableRegistrationListItem = {
+  email: string
+  fullName: string
+  id: string
+  linkedSubmission: RoundtableSubmissionSummary | null
+  position: string | null
+  registeredAt: string
+  source: string
+}
+
+export type RoundtableRegistrationDetail = RoundtableRegistrationListItem & {
+  clientMeta: Record<string, unknown>
+  surveySubmissionIdempotencyKey: string | null
+  userAgent: string | null
+}
+
+export type RoundtableRegistrationStats = {
+  linkedSubmissions: number
+  standaloneRegistrations: number
+  todayRegistrations: number
+  totalRegistrations: number
+}
+
+export type RoundtableRegistrationFilters = {
+  before?: string
+  limit?: number
+  linkStatus?: RoundtableLinkStatus
+  search?: string
 }

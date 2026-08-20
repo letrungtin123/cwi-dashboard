@@ -1,4 +1,14 @@
-import type { AuthSession, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats } from '@/types'
+import type {
+  AuthSession,
+  RoundtableRegistrationDetail,
+  RoundtableRegistrationFilters,
+  RoundtableRegistrationListItem,
+  RoundtableRegistrationStats,
+  SubmissionDetail,
+  SubmissionFilters,
+  SubmissionListItem,
+  SubmissionStats,
+} from '@/types'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8080').replace(/\/+$/, '')
 const CSRF_COOKIE_NAME = import.meta.env.VITE_CSRF_COOKIE_NAME ?? 'cwi_admin_csrf'
@@ -102,7 +112,7 @@ export async function logout() {
   csrfTokenMemory = ''
 }
 
-function buildQuery(filters: SubmissionFilters) {
+function buildSubmissionQuery(filters: SubmissionFilters) {
   const params = new URLSearchParams()
   params.set('limit', String(filters.limit ?? 50))
 
@@ -114,8 +124,19 @@ function buildQuery(filters: SubmissionFilters) {
   return params.toString()
 }
 
+function buildRoundtableQuery(filters: RoundtableRegistrationFilters) {
+  const params = new URLSearchParams()
+  params.set('limit', String(filters.limit ?? 50))
+
+  if (filters.before) params.set('before', filters.before)
+  if (filters.linkStatus) params.set('linkStatus', filters.linkStatus)
+  if (filters.search) params.set('search', filters.search)
+
+  return params.toString()
+}
+
 export function listSubmissions(filters: SubmissionFilters = {}) {
-  return request<SubmissionListItem[]>(`/api/v1/admin/survey-submissions?${buildQuery(filters)}`)
+  return request<SubmissionListItem[]>(`/api/v1/admin/survey-submissions?${buildSubmissionQuery(filters)}`)
 }
 
 export function getSubmissionStats() {
@@ -124,4 +145,16 @@ export function getSubmissionStats() {
 
 export function getSubmissionDetail(id: string) {
   return request<SubmissionDetail>(`/api/v1/admin/survey-submissions/${id}`)
+}
+
+export function listRoundtableRegistrations(filters: RoundtableRegistrationFilters = {}) {
+  return request<RoundtableRegistrationListItem[]>(`/api/v1/admin/roundtable-registrations?${buildRoundtableQuery(filters)}`)
+}
+
+export function getRoundtableRegistrationStats() {
+  return request<RoundtableRegistrationStats>('/api/v1/admin/roundtable-registrations/stats')
+}
+
+export function getRoundtableRegistrationDetail(id: string) {
+  return request<RoundtableRegistrationDetail>(`/api/v1/admin/roundtable-registrations/${id}`)
 }

@@ -1,17 +1,33 @@
 import { useState, type ReactNode } from 'react'
-import { BarChart3, LogOut, Menu, X } from 'lucide-react'
+import { BarChart3, LogOut, Menu, UsersRound, X } from 'lucide-react'
 import logoSrc from '@/assets/cwi-logo.svg'
 import type { AdminUser } from '@/types'
 
+export type DashboardSection = 'submissions' | 'roundtable'
+
 type DashboardShellProps = {
+  activeSection: DashboardSection
   children: ReactNode
+  eyebrow: string
   onLogout: () => Promise<void>
+  onSectionChange: (section: DashboardSection) => void
+  title: string
   user: AdminUser
 }
 
-export function DashboardShell({ children, onLogout, user }: DashboardShellProps) {
+const navItems: Array<{ icon: ReactNode; label: string; section: DashboardSection }> = [
+  { icon: <BarChart3 aria-hidden="true" size={18} />, label: 'Tổng quan khảo sát', section: 'submissions' },
+  { icon: <UsersRound aria-hidden="true" size={18} />, label: 'Danh sách Roundtable', section: 'roundtable' },
+]
+
+export function DashboardShell({ activeSection, children, eyebrow, onLogout, onSectionChange, title, user }: DashboardShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const roleLabel = user.role === 'admin' ? 'Quản trị viên' : 'Người xem'
+
+  const handleSectionChange = (section: DashboardSection) => {
+    onSectionChange(section)
+    setMobileOpen(false)
+  }
 
   return (
     <div className="dashboard-shell">
@@ -26,10 +42,21 @@ export function DashboardShell({ children, onLogout, user }: DashboardShellProps
         </div>
 
         <nav className="sidebar-nav" aria-label="Điều hướng bảng quản trị">
-          <button className="nav-item active" type="button">
-            <BarChart3 aria-hidden="true" size={18} />
-            <span>Tổng quan khảo sát</span>
-          </button>
+          {navItems.map((item) => {
+            const active = item.section === activeSection
+            return (
+              <button
+                aria-current={active ? 'page' : undefined}
+                className={`nav-item${active ? ' active' : ''}`}
+                key={item.section}
+                onClick={() => handleSectionChange(item.section)}
+                type="button"
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            )
+          })}
         </nav>
 
         <div className="sidebar-footer">
@@ -54,8 +81,8 @@ export function DashboardShell({ children, onLogout, user }: DashboardShellProps
               <Menu aria-hidden="true" size={20} />
             </button>
             <div>
-              <p>Chỉ số Nguồn lực Doanh nghiệp</p>
-              <h1>Lượt gửi khảo sát</h1>
+              <p>{eyebrow}</p>
+              <h1>{title}</h1>
             </div>
           </div>
         </header>
