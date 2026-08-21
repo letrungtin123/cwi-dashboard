@@ -60,7 +60,7 @@ export function LoginPage() {
               id="email"
               inputMode="email"
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="superadmin@gmail.com"
+              placeholder="example.com"
               type="email"
               value={email}
             />

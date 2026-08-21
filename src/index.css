@@ -524,7 +524,7 @@ h4 {
   padding: 16px 28px;
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 100;
 }
 
 .topbar-left,
@@ -1685,6 +1685,7 @@ td:nth-child(7) {
   .topbar {
     min-height: 72px;
     padding: 14px 16px;
+    z-index: 30;
   }
 
   .topbar h1 {
