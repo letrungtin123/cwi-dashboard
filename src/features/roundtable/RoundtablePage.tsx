@@ -16,8 +16,9 @@ import {
   UsersRound,
   X,
 } from 'lucide-react'
-import { apiUrl, getRoundtableRegistrationDetail, getRoundtableRegistrationStats, listRoundtableRegistrations } from '@/lib/api'
+import { apiUrl, getRoundtableRegistrationDetail, getRoundtableRegistrationStats, listRoundtableRegistrationsPage } from '@/lib/api'
 import { formatDateTime, formatNumber, valueToText } from '@/lib/format'
+import { TablePagination } from '@/components/TablePagination'
 import type {
   PrivacyConsent,
   ReportSummary,
@@ -32,7 +33,8 @@ import type {
 type LinkFilter = 'all' | RoundtableLinkStatus
 type SelectOption<T extends string> = { description?: string; label: string; value: T }
 
-const pageSize = 50
+const defaultPageSize = 10
+type PageCursor = { before: string; beforeId: string } | null
 const searchDebounceMs = 350
 
 const statusMeta: Record<SubmissionStatus, { className: string; label: string }> = {
@@ -62,10 +64,11 @@ const linkOptions: Array<SelectOption<LinkFilter>> = [
   { description: 'Đăng ký Roundtable độc lập, chưa có lượt gửi khảo sát', label: 'Đăng ký riêng', value: 'standalone' },
 ]
 
-function buildFilters(search: string, linkStatus: LinkFilter, before?: string): RoundtableRegistrationFilters {
+function buildFilters(search: string, linkStatus: LinkFilter, limit: number, cursor: PageCursor): RoundtableRegistrationFilters {
   return {
-    before,
-    limit: pageSize,
+    before: cursor?.before,
+    beforeId: cursor?.beforeId,
+    limit,
     linkStatus: linkStatus === 'all' ? undefined : linkStatus,
     search: search || undefined,
   }
@@ -529,11 +532,13 @@ export function RoundtablePage() {
   const [draftSearch, setDraftSearch] = useState('')
   const [search, setSearch] = useState('')
   const [linkStatus, setLinkStatus] = useState<LinkFilter>('all')
+  const [pageSize, setPageSize] = useState(defaultPageSize)
+  const [page, setPage] = useState(1)
+  const [pageCursors, setPageCursors] = useState<Array<PageCursor>>([null])
   const [items, setItems] = useState<RoundtableRegistrationListItem[]>([])
   const [stats, setStats] = useState<RoundtableRegistrationStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(false)
+  const [hasNextPage, setHasNextPage] = useState(false)
   const [error, setError] = useState('')
   const [selectedId, setSelectedId] = useState('')
   const [detail, setDetail] = useState<RoundtableRegistrationDetail | null>(null)
@@ -542,32 +547,61 @@ export function RoundtablePage() {
   const [detailReloadKey, setDetailReloadKey] = useState(0)
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => setSearch(draftSearch.trim()), searchDebounceMs)
+    const timeoutId = window.setTimeout(() => {
+      setSearch(draftSearch.trim())
+      setPage(1)
+      setPageCursors([null])
+    }, searchDebounceMs)
     return () => window.clearTimeout(timeoutId)
   }, [draftSearch])
 
-  const filters = useMemo(() => buildFilters(search, linkStatus), [linkStatus, search])
+  const cursor = pageCursors[page - 1] ?? null
+  const filters = useMemo(() => buildFilters(search, linkStatus, pageSize, cursor), [cursor, linkStatus, pageSize, search])
 
-  const loadInitial = useCallback(async () => {
+  const loadStats = useCallback(async () => {
+    try {
+      setStats(await getRoundtableRegistrationStats())
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : 'Không tải được thống kê Roundtable.'
+      setError(message)
+    }
+  }, [])
+
+  const loadPage = useCallback(async () => {
     setIsLoading(true)
     setError('')
 
     try {
-      const [nextItems, nextStats] = await Promise.all([listRoundtableRegistrations(filters), getRoundtableRegistrationStats()])
-      setItems(nextItems)
-      setStats(nextStats)
-      setHasMore(nextItems.length === pageSize)
+      const response = await listRoundtableRegistrationsPage(filters)
+      setItems(response.items)
+      setHasNextPage(response.hasNextPage)
+
+      const lastItem = response.items.at(-1)
+      const nextCursor: PageCursor = lastItem
+        ? { before: lastItem.registeredAt, beforeId: lastItem.id }
+        : null
+
+      setPageCursors((current) => {
+        const next = current.slice(0, page + 1)
+        next[page] = response.hasNextPage ? nextCursor : null
+        return next
+      })
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : 'Không tải được dữ liệu Roundtable.'
       setError(message)
     } finally {
       setIsLoading(false)
     }
-  }, [filters])
+  }, [filters, page])
 
   useEffect(() => {
-    void loadInitial()
-  }, [loadInitial])
+    void loadStats()
+  }, [loadStats])
+
+  useEffect(() => {
+    void loadPage()
+  }, [loadPage])
+
 
   useEffect(() => {
     if (!selectedId) {
@@ -602,20 +636,6 @@ export function RoundtablePage() {
     }
   }, [detailReloadKey, selectedId])
 
-  async function loadMore() {
-    const before = items.at(-1)?.registeredAt
-    if (!before) return
-
-    setIsLoadingMore(true)
-    try {
-      const nextItems = await listRoundtableRegistrations({ ...filters, before })
-      setItems((current) => [...current, ...nextItems])
-      setHasMore(nextItems.length === pageSize)
-    } finally {
-      setIsLoadingMore(false)
-    }
-  }
-
   return (
     <main className="dashboard-main">
       {isLoading && !stats ? (
@@ -635,7 +655,7 @@ export function RoundtablePage() {
             <p>Danh sách</p>
             <h2>Đăng ký CEO Roundtable</h2>
           </div>
-          <button className="secondary-button" onClick={() => void loadInitial()} type="button">
+          <button className="secondary-button" onClick={() => { setPage(1); setPageCursors([null]); void loadStats(); if (page === 1) void loadPage() }} type="button">
             <RefreshCw aria-hidden="true" size={16} />
             <span>Tải lại</span>
           </button>
@@ -652,20 +672,28 @@ export function RoundtablePage() {
               value={draftSearch}
             />
           </div>
-          <CustomSelect label="Liên kết" onChange={setLinkStatus} options={linkOptions} value={linkStatus} />
+          <CustomSelect label="Liên kết" onChange={(next) => { setLinkStatus(next); setPage(1); setPageCursors([null]) }} options={linkOptions} value={linkStatus} />
         </div>
 
         {isLoading ? <TableSkeleton /> : null}
-        {!isLoading && (error || items.length === 0) ? <EmptyState error={error} onRetry={() => void loadInitial()} /> : null}
+        {!isLoading && (error || items.length === 0) ? <EmptyState error={error} onRetry={() => void loadPage()} /> : null}
         {!isLoading && !error && items.length > 0 ? <RoundtableTable items={items} onSelect={setSelectedId} /> : null}
 
         {!isLoading && !error && items.length > 0 ? (
-          <div className="table-footer">
-            <span>{formatNumber(items.length)} dòng đang hiển thị</span>
-            <button className="secondary-button" disabled={!hasMore || isLoadingMore} onClick={() => void loadMore()} type="button">
-              <span>{isLoadingMore ? 'Đang tải' : hasMore ? 'Tải thêm' : 'Hết dữ liệu'}</span>
-            </button>
-          </div>
+          <TablePagination
+            hasNextPage={hasNextPage}
+            hasPreviousPage={page > 1}
+            isLoading={isLoading}
+            onPageChange={setPage}
+            onPageSizeChange={(nextPageSize) => {
+              setPageSize(nextPageSize)
+              setPage(1)
+              setPageCursors([null])
+            }}
+            page={page}
+            pageSize={pageSize}
+            rowCount={items.length}
+          />
         ) : null}
       </section>
 

@@ -1188,6 +1188,184 @@ td:nth-child(7) {
   max-width: 360px;
 }
 
+.pagination-summary {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+  min-width: 0;
+}
+
+.pagination-summary strong {
+  color: var(--cwi-navy);
+  font-size: 13px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.pagination-summary span {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.pagination-controls {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pagination-page-size {
+  min-width: 150px;
+  position: relative;
+}
+
+.pagination-select-trigger {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px;
+  grid-template-rows: auto auto;
+  min-height: 42px;
+  padding: 6px 10px 6px 12px;
+  row-gap: 1px;
+  text-align: left;
+  width: 100%;
+}
+
+.pagination-select-trigger:hover,
+.pagination-select-trigger.is-open {
+  border-color: rgba(20, 78, 175, 0.55);
+  box-shadow: 0 0 0 3px rgba(20, 78, 175, 0.08);
+}
+
+.pagination-select-trigger:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.pagination-select-label,
+.pagination-select-value {
+  grid-column: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pagination-select-label {
+  color: var(--muted);
+  display: block;
+  font-size: 10px;
+  font-weight: 850;
+  grid-row: 1;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.pagination-select-value {
+  color: #202939;
+  display: block;
+  font-size: 13px;
+  font-weight: 850;
+  grid-row: 2;
+  line-height: 1.2;
+}
+
+.pagination-select-chevron {
+  align-self: center;
+  color: #667085;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  justify-self: end;
+  transition: transform 0.16s ease;
+}
+
+.pagination-select-trigger.is-open .pagination-select-chevron {
+  transform: rotate(180deg);
+}
+
+.pagination-select-menu {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  bottom: calc(100% + 8px);
+  box-shadow: var(--shadow-md);
+  display: grid;
+  gap: 4px;
+  left: 0;
+  min-width: 100%;
+  padding: 6px;
+  position: absolute;
+  right: 0;
+  z-index: 90;
+}
+
+.pagination-select-option {
+  align-items: center;
+  background: transparent;
+  border-radius: 7px;
+  color: #344054;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  min-height: 38px;
+  padding: 8px 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.pagination-select-option:hover,
+.pagination-select-option.is-selected {
+  background: #f2f7ff;
+  color: var(--cwi-blue-dark);
+}
+
+.pagination-select-option svg {
+  color: var(--cwi-blue);
+  flex: 0 0 auto;
+}
+
+.pagination-arrow {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--cwi-navy);
+  cursor: pointer;
+  display: inline-flex;
+  height: 38px;
+  justify-content: center;
+  padding: 0;
+  width: 38px;
+}
+
+.pagination-arrow:hover:not(:disabled) {
+  background: #f2f7ff;
+  border-color: rgba(20, 78, 175, 0.55);
+  color: var(--cwi-blue-dark);
+}
+
+.pagination-arrow:disabled {
+  color: #98a2b3;
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.pagination-page-label {
+  color: var(--cwi-navy);
+  font-size: 13px;
+  font-weight: 850;
+  min-width: 54px;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .table-footer {
   align-items: center;
   display: flex;
@@ -1198,6 +1376,21 @@ td:nth-child(7) {
 
 .table-footer span {
   color: var(--muted);
+  font-size: 13px;
+}
+
+.table-footer .pagination-select-label {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.table-footer .pagination-select-value {
+  color: #202939;
+  font-size: 13px;
+}
+
+.table-footer .pagination-page-label {
+  color: var(--cwi-navy);
   font-size: 13px;
 }
 
@@ -1853,6 +2046,20 @@ td:nth-child(7) {
   .table-footer {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .pagination-controls {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .pagination-page-size {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .pagination-page-label {
+    min-width: 52px;
   }
 
   .custom-select-menu {

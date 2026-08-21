@@ -69,6 +69,11 @@ export type SubmissionDetail = SubmissionListItem & {
   source: string
 }
 
+export type CursorPage<T> = {
+  hasNextPage: boolean
+  items: T[]
+}
+
 export type SubmissionStats = {
   averageOverallScore: number
   averageScaleScore: number
@@ -81,6 +86,7 @@ export type SubmissionStats = {
 
 export type SubmissionFilters = {
   before?: string
+  beforeId?: string
   limit?: number
   roundtable?: 'true' | 'false'
   search?: string
@@ -127,6 +133,7 @@ export type RoundtableRegistrationStats = {
 
 export type RoundtableRegistrationFilters = {
   before?: string
+  beforeId?: string
   limit?: number
   linkStatus?: RoundtableLinkStatus
   search?: string

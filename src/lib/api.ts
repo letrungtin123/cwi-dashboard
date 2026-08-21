@@ -1,5 +1,6 @@
 import type {
   AuthSession,
+  CursorPage,
   RoundtableRegistrationDetail,
   RoundtableRegistrationFilters,
   RoundtableRegistrationListItem,
@@ -114,9 +115,10 @@ export async function logout() {
 
 function buildSubmissionQuery(filters: SubmissionFilters) {
   const params = new URLSearchParams()
-  params.set('limit', String(filters.limit ?? 50))
+  params.set('limit', String(filters.limit ?? 10))
 
   if (filters.before) params.set('before', filters.before)
+  if (filters.beforeId) params.set('beforeId', filters.beforeId)
   if (filters.status) params.set('status', filters.status)
   if (filters.roundtable) params.set('roundtable', filters.roundtable)
   if (filters.search) params.set('search', filters.search)
@@ -126,15 +128,19 @@ function buildSubmissionQuery(filters: SubmissionFilters) {
 
 function buildRoundtableQuery(filters: RoundtableRegistrationFilters) {
   const params = new URLSearchParams()
-  params.set('limit', String(filters.limit ?? 50))
+  params.set('limit', String(filters.limit ?? 10))
 
   if (filters.before) params.set('before', filters.before)
+  if (filters.beforeId) params.set('beforeId', filters.beforeId)
   if (filters.linkStatus) params.set('linkStatus', filters.linkStatus)
   if (filters.search) params.set('search', filters.search)
 
   return params.toString()
 }
 
+export function listSubmissionsPage(filters: SubmissionFilters = {}) {
+  return request<CursorPage<SubmissionListItem>>('/api/v1/admin/survey-submissions/page?' + buildSubmissionQuery(filters))
+}
 export function listSubmissions(filters: SubmissionFilters = {}) {
   return request<SubmissionListItem[]>(`/api/v1/admin/survey-submissions?${buildSubmissionQuery(filters)}`)
 }
@@ -147,6 +153,9 @@ export function getSubmissionDetail(id: string) {
   return request<SubmissionDetail>(`/api/v1/admin/survey-submissions/${id}`)
 }
 
+export function listRoundtableRegistrationsPage(filters: RoundtableRegistrationFilters = {}) {
+  return request<CursorPage<RoundtableRegistrationListItem>>('/api/v1/admin/roundtable-registrations/page?' + buildRoundtableQuery(filters))
+}
 export function listRoundtableRegistrations(filters: RoundtableRegistrationFilters = {}) {
   return request<RoundtableRegistrationListItem[]>(`/api/v1/admin/roundtable-registrations?${buildRoundtableQuery(filters)}`)
 }
