@@ -134,3 +134,26 @@ export type RoundtableRegistrationFilters = {
   linkStatus?: RoundtableLinkStatus
   search?: string
 }
+
+
+export type ExportDataset = 'submissions' | 'roundtable'
+
+export type ExportFilters = {
+  linkStatus?: 'linked' | 'standalone'
+  roundtableRegistered?: boolean
+  search?: string
+  status?: SubmissionStatus
+}
+
+export type ExportJob = {
+  createdAt: string
+  dataset: ExportDataset
+  errorMessage: string | null
+  expiresAt: string
+  fileName: string | null
+  fileSize: number | null
+  id: string
+  rowCount: number | null
+  status: 'queued' | 'generating' | 'completed' | 'failed' | 'expired'
+}
+

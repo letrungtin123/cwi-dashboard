@@ -10,6 +10,7 @@ import type {
   SubmissionListItem,
   SubmissionStats,
 } from '@/types'
+import type { ExportDataset, ExportFilters, ExportJob } from '@/types'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8080').replace(/\/+$/, '')
 const CSRF_COOKIE_NAME = import.meta.env.VITE_CSRF_COOKIE_NAME ?? 'cwi_admin_csrf'
@@ -175,3 +176,30 @@ export function getRoundtableRegistrationStats() {
 export function getRoundtableRegistrationDetail(id: string) {
   return request<RoundtableRegistrationDetail>(`/api/v1/admin/roundtable-registrations/${id}`)
 }
+
+
+export function createExportJob(input: { dataset: ExportDataset; filters: ExportFilters }) {
+  return request<ExportJob>('/api/v1/admin/exports', {
+    body: JSON.stringify(input),
+    method: 'POST',
+  }, { csrf: true })
+}
+
+export function getExportJob(id: string) {
+  return request<ExportJob>('/api/v1/admin/exports/' + encodeURIComponent(id))
+}
+
+export function getExportDownloadUrl(id: string) {
+  return apiUrl("/api/v1/admin/exports/" + encodeURIComponent(id) + "/download")
+}
+
+export async function downloadExportFile(id: string) {
+  const response = await fetch(apiUrl('/api/v1/admin/exports/' + encodeURIComponent(id) + '/download'), {
+    credentials: 'include',
+  })
+  if (!response.ok) {
+    throw new ApiError(response.status, 'export_download_failed', 'Không tải được file dữ liệu.')
+  }
+  return response.blob()
+}
+

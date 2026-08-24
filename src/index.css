@@ -2082,3 +2082,38 @@ td:nth-child(7) {
     transition-duration: 0.001ms !important;
   }
 }
+
+
+
+.surface-head > .surface-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.surface-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.surface-actions > .secondary-button {
+  flex: 0 0 auto;
+}
+.export-action {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.export-button {
+  white-space: nowrap;
+}
+
+

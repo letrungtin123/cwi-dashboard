@@ -17,10 +17,12 @@ import {
   UsersRound,
   X,
 } from 'lucide-react'
+import { ExportDataButton } from '@/components/ExportDataButton'
 import { TablePagination } from '@/components/TablePagination'
 import { apiUrl, getSubmissionDetail, getSubmissionStats, listSubmissionsPage } from '@/lib/api'
+import { useAuth } from '@/features/auth/AuthProvider'
 import { formatDateTime, formatNumber, valueToText } from '@/lib/format'
-import type { PrivacyConsent, ReportSummary, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus } from '@/types'
+import type { ExportFilters, PrivacyConsent, ReportSummary, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus } from '@/types'
 
 type StatusOption = 'all' | SubmissionStatus
 type RoundtableOption = 'all' | 'true' | 'false'
@@ -497,6 +499,7 @@ function SubmissionDetailDrawer({
 }
 
 export function SubmissionsPage() {
+  const { user } = useAuth()
   const [draftSearch, setDraftSearch] = useState('')
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<StatusOption>('all')
@@ -525,6 +528,11 @@ export function SubmissionsPage() {
 
   const cursor = pageCursors[page - 1] ?? null
   const filters = useMemo(() => buildFilters(search, status, roundtable, pageSize, cursor), [cursor, pageSize, roundtable, search, status])
+  const exportFilters = useMemo<ExportFilters>(() => ({
+    roundtableRegistered: roundtable === 'all' ? undefined : roundtable === 'true',
+    search: search || undefined,
+    status: status === 'all' ? undefined : status,
+  }), [roundtable, search, status])
 
   const loadStats = useCallback(async () => {
     try {
@@ -621,10 +629,13 @@ export function SubmissionsPage() {
             <p>Danh sách</p>
             <h2>Lượt gửi khảo sát</h2>
           </div>
-          <button className="secondary-button" onClick={() => { setPage(1); setPageCursors([null]); void loadStats(); if (page === 1) void loadPage() }} type="button">
-            <RefreshCw aria-hidden="true" size={16} />
-            <span>Tải lại</span>
-          </button>
+          <div className="surface-actions">
+            {user?.role === 'admin' ? <ExportDataButton dataset="submissions" filters={exportFilters} /> : null}
+            <button className="secondary-button" onClick={() => { setPage(1); setPageCursors([null]); void loadStats(); if (page === 1) void loadPage() }} type="button">
+              <RefreshCw aria-hidden="true" size={16} />
+              <span>Tải lại</span>
+            </button>
+          </div>
         </div>
 
         <div className="filter-bar">
@@ -674,3 +685,5 @@ export function SubmissionsPage() {
     </main>
   )
 }
+
+

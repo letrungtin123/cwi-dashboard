@@ -17,9 +17,12 @@ import {
   X,
 } from 'lucide-react'
 import { apiUrl, getRoundtableRegistrationDetail, getRoundtableRegistrationStats, listRoundtableRegistrationsPage } from '@/lib/api'
+import { useAuth } from '@/features/auth/AuthProvider'
+import { ExportDataButton } from '@/components/ExportDataButton'
 import { formatDateTime, formatNumber, valueToText } from '@/lib/format'
 import { TablePagination } from '@/components/TablePagination'
 import type {
+  ExportFilters,
   PrivacyConsent,
   ReportSummary,
   RoundtableLinkStatus,
@@ -529,6 +532,7 @@ function RoundtableDetailDrawer({
 }
 
 export function RoundtablePage() {
+  const { user } = useAuth()
   const [draftSearch, setDraftSearch] = useState('')
   const [search, setSearch] = useState('')
   const [linkStatus, setLinkStatus] = useState<LinkFilter>('all')
@@ -557,6 +561,10 @@ export function RoundtablePage() {
 
   const cursor = pageCursors[page - 1] ?? null
   const filters = useMemo(() => buildFilters(search, linkStatus, pageSize, cursor), [cursor, linkStatus, pageSize, search])
+  const exportFilters = useMemo<ExportFilters>(() => ({
+    linkStatus: linkStatus === 'all' ? undefined : linkStatus,
+    search: search || undefined,
+  }), [linkStatus, search])
 
   const loadStats = useCallback(async () => {
     try {
@@ -655,10 +663,13 @@ export function RoundtablePage() {
             <p>Danh sách</p>
             <h2>Đăng ký CEO Roundtable</h2>
           </div>
-          <button className="secondary-button" onClick={() => { setPage(1); setPageCursors([null]); void loadStats(); if (page === 1) void loadPage() }} type="button">
-            <RefreshCw aria-hidden="true" size={16} />
-            <span>Tải lại</span>
-          </button>
+          <div className="surface-actions">
+            {user?.role === 'admin' ? <ExportDataButton dataset="roundtable" filters={exportFilters} /> : null}
+            <button className="secondary-button" onClick={() => { setPage(1); setPageCursors([null]); void loadStats(); if (page === 1) void loadPage() }} type="button">
+              <RefreshCw aria-hidden="true" size={16} />
+              <span>Tải lại</span>
+            </button>
+          </div>
         </div>
 
         <div className="filter-bar roundtable-filter-bar">
@@ -708,3 +719,5 @@ export function RoundtablePage() {
     </main>
   )
 }
+
+
