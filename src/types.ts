@@ -32,14 +32,12 @@ export type SubmissionListItem = {
   email: string
   fullName: string
   id: string
-  overallScore: number
   part1Completed: boolean
   part2Completed: boolean
   position: string
   privacyConsent: PrivacyConsent
   report: ReportSummary
   roundtableRegistered: boolean
-  scaleScore: number
   statusNote: string
   submittedAt: string
   submissionStatus: SubmissionStatus
@@ -57,8 +55,6 @@ export type SubmissionAnswer = {
 
 export type SubmissionDetail = SubmissionListItem & {
   answers: SubmissionAnswer[]
-  clientMeta: Record<string, unknown>
-  domainScores: unknown
   roundtableRegistration: {
     email: string
     fullName: string
@@ -66,17 +62,15 @@ export type SubmissionDetail = SubmissionListItem & {
     position: string | null
     registeredAt: string
   } | null
-  source: string
 }
 
 export type CursorPage<T> = {
   hasNextPage: boolean
   items: T[]
+  nextCursor: string | null
 }
 
 export type SubmissionStats = {
-  averageOverallScore: number
-  averageScaleScore: number
   fullPrivateReport: number
   part1Only: number
   part2RefusedPrivacy: number
@@ -87,6 +81,7 @@ export type SubmissionStats = {
 export type SubmissionFilters = {
   before?: string
   beforeId?: string
+  cursor?: string
   limit?: number
   roundtable?: 'true' | 'false'
   search?: string
@@ -134,6 +129,7 @@ export type RoundtableRegistrationStats = {
 export type RoundtableRegistrationFilters = {
   before?: string
   beforeId?: string
+  cursor?: string
   limit?: number
   linkStatus?: RoundtableLinkStatus
   search?: string
