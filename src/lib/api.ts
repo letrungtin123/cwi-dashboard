@@ -9,6 +9,8 @@ import type {
   SubmissionFilters,
   SubmissionListItem,
   SubmissionStats,
+  ReportDeliveryCampaign,
+  ReportDeliveryStatus,
 } from '@/types'
 import type { ExportDataset, ExportFilters, ExportJob } from '@/types'
 
@@ -203,3 +205,44 @@ export async function downloadExportFile(id: string) {
   return response.blob()
 }
 
+
+
+export function getReportDeliveryStatuses(ids: string[]) {
+  const params = new URLSearchParams({ ids: ids.join(',') })
+  return request<ReportDeliveryStatus[]>('/api/v1/admin/report-delivery/submissions/status?' + params.toString())
+}
+
+export function getReportDeliveryStatus(id: string) {
+  return request<ReportDeliveryStatus>(`/api/v1/admin/report-delivery/submissions/${encodeURIComponent(id)}/status`)
+}
+
+export function previewReportDeliveryCampaign() {
+  return request<ReportDeliveryCampaign>('/api/v1/admin/report-delivery/campaigns/preview', { method: 'POST' }, { csrf: true })
+}
+
+export function confirmReportDeliveryCampaign(id: string) {
+  return request<ReportDeliveryCampaign>(`/api/v1/admin/report-delivery/campaigns/${encodeURIComponent(id)}/confirm`, { method: 'POST' }, { csrf: true })
+}
+
+export function getReportDeliveryCampaign(id: string) {
+  return request<ReportDeliveryCampaign>(`/api/v1/admin/report-delivery/campaigns/${encodeURIComponent(id)}`)
+}
+
+export async function uploadReportPdf(id: string, file: File) {
+  const formData = new FormData()
+  formData.append('file', file, file.name)
+  const headers = new Headers({ 'x-csrf-token': getCsrfToken() })
+  const response = await fetch(apiUrl(`/api/v1/admin/report-delivery/submissions/${encodeURIComponent(id)}/report-pdf`), {
+    body: formData,
+    credentials: 'include',
+    headers,
+    method: 'PUT',
+  })
+  const payload = (await response.json().catch(() => null)) as ApiEnvelope<ReportDeliveryStatus> | { error?: { code?: string; message?: string } } | null
+  if (!response.ok) {
+    const error = payload && 'error' in payload ? payload.error : undefined
+    throw new ApiError(response.status, error?.code ?? 'report_pdf_upload_failed', error?.message ?? 'Không tải được file PDF lên.')
+  }
+  if (!payload || !('data' in payload)) throw new ApiError(response.status, 'invalid_response', 'Phản hồi từ hệ thống không hợp lệ.')
+  return payload.data
+}

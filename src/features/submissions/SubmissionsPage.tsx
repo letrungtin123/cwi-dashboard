@@ -18,11 +18,13 @@ import {
   X,
 } from 'lucide-react'
 import { ExportDataButton } from '@/components/ExportDataButton'
+import { ReportDeliveryCampaignDialog } from './ReportDeliveryCampaignDialog'
+import { ReportDeliveryFileStatus, ReportDeliveryTableCell } from './ReportDeliveryControls'
 import { TablePagination } from '@/components/TablePagination'
-import { apiUrl, getSubmissionDetail, getSubmissionStats, listSubmissionsPage } from '@/lib/api'
+import { apiUrl, confirmReportDeliveryCampaign, getReportDeliveryCampaign, getReportDeliveryStatuses, getSubmissionDetail, getSubmissionStats, listSubmissionsPage, previewReportDeliveryCampaign } from '@/lib/api'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { formatDateTime, formatNumber, valueToText } from '@/lib/format'
-import type { ExportFilters, PrivacyConsent, ReportSummary, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus } from '@/types'
+import type { ExportFilters, PrivacyConsent, ReportDeliveryCampaign, ReportDeliveryStatus, ReportSummary, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus } from '@/types'
 
 type StatusOption = 'all' | SubmissionStatus
 type RoundtableOption = 'all' | 'true' | 'false'
@@ -91,6 +93,15 @@ function StatusBadge({ status }: { status: SubmissionStatus }) {
 
 function ReportBadge({ report }: { report: ReportSummary }) {
   return <span className={`report-badge report-${report.status}`}>{report.label}</span>
+}
+
+function DeliveryStatusBadge({ status }: { status: ReportDeliveryStatus | null }) {
+  const emailStatus = status?.emailStatus ?? 'not_ready'
+  if (emailStatus === 'sent') return <span className="delivery-badge is-sent">Đã gửi email</span>
+  if (emailStatus === 'sending' || emailStatus === 'queued') return <span className="delivery-badge is-pending">Đang xử lý</span>
+  if (emailStatus === 'failed') return <span className="delivery-badge is-failed">Gửi lỗi</span>
+  if (status?.file.available) return <span className="delivery-badge is-ready">Đã có PDF</span>
+  return <span className="delivery-badge is-missing">Thiếu PDF</span>
 }
 
 function ReportDownloadLink({ report }: { report: ReportSummary }) {
@@ -225,13 +236,15 @@ function TableSkeleton() {
     <div className="table-loading" role="status" aria-label="Đang tải lượt gửi">
       <span className="sr-only">Đang tải lượt gửi</span>
       <div className="table-skeleton desktop-table">
-        {Array.from({ length: 7 }, (_, index) => (
+        {Array.from({ length: 9 }, (_, index) => (
           <div className="table-skeleton-row" key={index}>
             <SkeletonLine className="skeleton-person" />
             <SkeletonLine className="skeleton-status" />
             <SkeletonLine className="skeleton-score" />
             <SkeletonLine className="skeleton-chip" />
+            {/* Temporarily hide the Report column on desktop. */}
             <SkeletonLine className="skeleton-report" />
+            <SkeletonLine className="skeleton-status" />
             <SkeletonLine className="skeleton-date" />
             <SkeletonLine className="skeleton-action" />
           </div>
@@ -285,7 +298,7 @@ function EmptyState({ error, onRetry }: { error: string; onRetry: () => void }) 
   )
 }
 
-function SubmissionTable({ items, onSelect }: { items: SubmissionListItem[]; onSelect: (id: string) => void }) {
+function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onSelect }: { deliveryStatuses: Record<string, ReportDeliveryStatus>; items: SubmissionListItem[]; onDeliveryChange: (status: ReportDeliveryStatus) => void; onSelect: (id: string) => void }) {
   return (
     <>
       <div className="table-wrap desktop-table">
@@ -296,9 +309,10 @@ function SubmissionTable({ items, onSelect }: { items: SubmissionListItem[]; onS
               <th>Trạng thái</th>
               <th>Số câu</th>
               <th>Roundtable</th>
-              <th>Báo cáo</th>
+              <th>Kết quả</th>
+              <th>Email kết quả</th>
               <th>Thời gian</th>
-              <th aria-label="Thao tác" />
+              <th>Hành động</th>
             </tr>
           </thead>
           <tbody>
@@ -328,17 +342,16 @@ function SubmissionTable({ items, onSelect }: { items: SubmissionListItem[]; onS
                     {item.roundtableRegistered ? 'Có đăng ký' : 'Không'}
                   </span>
                 </td>
-                <td>
-                  <div className="report-cell">
-                    <ReportBadge report={item.report} />
-                    <ReportDownloadLink report={item.report} />
-                  </div>
-                </td>
+                <td><ReportDeliveryFileStatus status={deliveryStatuses[item.id] ?? null} /></td>
+                <td><DeliveryStatusBadge status={deliveryStatuses[item.id] ?? null} /></td>
                 <td>{formatDateTime(item.submittedAt)}</td>
                 <td>
-                  <button className="icon-button" onClick={() => onSelect(item.id)} title="Xem chi tiết" type="button">
-                    <Eye aria-hidden="true" size={18} />
-                  </button>
+                  <div className="table-row-actions">
+                    <ReportDeliveryTableCell actionOnly onChanged={onDeliveryChange} status={deliveryStatuses[item.id] ?? null} submissionId={item.id} />
+                    <button className="icon-button" onClick={() => onSelect(item.id)} title="Xem chi tiết" type="button">
+                      <Eye aria-hidden="true" size={18} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -367,9 +380,14 @@ function SubmissionTable({ items, onSelect }: { items: SubmissionListItem[]; onS
             <div className="submission-card-statuses">
               <StatusBadge status={item.submissionStatus} />
               <ReportBadge report={item.report} />
+              <DeliveryStatusBadge status={deliveryStatuses[item.id] ?? null} />
             </div>
             <p>{item.email}</p>
             <ReportDownloadLink report={item.report} />
+            <div className="submission-card-result">
+              <span>Kết quả</span>
+              <ReportDeliveryTableCell onChanged={onDeliveryChange} status={deliveryStatuses[item.id] ?? null} submissionId={item.id} />
+            </div>
             <div className="submission-card-meta">
               <span>{item.answersCount} câu trả lời</span>
               <span>{item.roundtableRegistered ? 'Có đăng ký Roundtable' : 'Không đăng ký Roundtable'}</span>
@@ -517,6 +535,12 @@ export function SubmissionsPage() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState('')
   const [detailReloadKey, setDetailReloadKey] = useState(0)
+  const [deliveryStatuses, setDeliveryStatuses] = useState<Record<string, ReportDeliveryStatus>>({})
+  const [deliveryStatusError, setDeliveryStatusError] = useState("")
+  const [campaign, setCampaign] = useState<ReportDeliveryCampaign | null>(null)
+  const [campaignDialogOpen, setCampaignDialogOpen] = useState(false)
+  const [campaignBusy, setCampaignBusy] = useState(false)
+  const [campaignError, setCampaignError] = useState('')
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       setSearch(draftSearch.trim())
@@ -545,12 +569,20 @@ export function SubmissionsPage() {
 
   const loadPage = useCallback(async () => {
     setIsLoading(true)
-    setError('')
+    setError("")
+    setDeliveryStatusError("")
 
     try {
       const response = await listSubmissionsPage(filters)
       setItems(response.items)
       setHasNextPage(response.hasNextPage)
+      let deliveryRows: ReportDeliveryStatus[] = []
+      try {
+        deliveryRows = await getReportDeliveryStatuses(response.items.map((item) => item.id))
+      } catch (caught) {
+        setDeliveryStatusError(caught instanceof Error ? caught.message : "Không tải được trạng thái file PDF.")
+      }
+      setDeliveryStatuses(Object.fromEntries(deliveryRows.map((row) => [row.submissionId, row])))
 
       const lastItem = response.items.at(-1)
       const nextCursor: PageCursor = lastItem
@@ -592,7 +624,8 @@ export function SubmissionsPage() {
 
     getSubmissionDetail(selectedId)
       .then((nextDetail) => {
-        if (active) setDetail(nextDetail)
+        if (!active) return
+        setDetail(nextDetail)
       })
       .catch((caught) => {
         if (!active) return
@@ -610,6 +643,50 @@ export function SubmissionsPage() {
     }
   }, [detailReloadKey, selectedId])
 
+  useEffect(() => {
+    if (!campaign || !['queued', 'dispatching', 'sending'].includes(campaign.status)) return
+    let active = true
+    const timer = window.setInterval(() => {
+      void getReportDeliveryCampaign(campaign.id).then((nextCampaign) => {
+        if (active) setCampaign(nextCampaign)
+        if (active && ['completed', 'failed', 'expired'].includes(nextCampaign.status)) void loadPage()
+      }).catch(() => undefined)
+    }, 2000)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+    }
+  }, [campaign, loadPage])
+
+  async function openCampaignDialog() {
+    setCampaignBusy(true)
+    setCampaignError('')
+    try {
+      setCampaign(await previewReportDeliveryCampaign())
+      setCampaignDialogOpen(true)
+    } catch (caught) {
+      setCampaignError(caught instanceof Error ? caught.message : 'Không tạo được bản xem trước gửi email.')
+    } finally {
+      setCampaignBusy(false)
+    }
+  }
+
+  async function confirmCampaign() {
+    if (!campaign) return
+    setCampaignBusy(true)
+    setCampaignError('')
+    try {
+      setCampaign(await confirmReportDeliveryCampaign(campaign.id))
+    } catch (caught) {
+      setCampaignError(caught instanceof Error ? caught.message : 'Không thể xác nhận gửi email.')
+    } finally {
+      setCampaignBusy(false)
+    }
+  }
+
+  function handleDeliveryChange(next: ReportDeliveryStatus) {
+    setDeliveryStatuses((current) => ({ ...current, [next.submissionId]: next }))
+  }
   return (
     <main className="dashboard-main">
       {isLoading && !stats ? (
@@ -631,12 +708,16 @@ export function SubmissionsPage() {
           </div>
           <div className="surface-actions">
             {user?.role === 'admin' ? <ExportDataButton dataset="submissions" filters={exportFilters} /> : null}
+            {user?.role === 'admin' ? <button className="primary-button" disabled={campaignBusy} onClick={() => void openCampaignDialog()} type="button"><Mail aria-hidden="true" size={16} /><span>{campaignBusy ? 'Đang chuẩn bị...' : 'Gửi email trả kết quả'}</span></button> : null}
             <button className="secondary-button" onClick={() => { setPage(1); setPageCursors([null]); void loadStats(); if (page === 1) void loadPage() }} type="button">
               <RefreshCw aria-hidden="true" size={16} />
               <span>Tải lại</span>
             </button>
           </div>
         </div>
+
+        {campaignError && !campaignDialogOpen ? <p className="report-delivery-error report-delivery-inline-error">{campaignError}</p> : null}
+        {deliveryStatusError ? <p className="report-delivery-error report-delivery-inline-error">{deliveryStatusError} Vui lòng bấm Tải lại.</p> : null}
 
         <div className="filter-bar">
           <div className="search-box">
@@ -655,7 +736,7 @@ export function SubmissionsPage() {
 
         {isLoading ? <TableSkeleton /> : null}
         {!isLoading && (error || items.length === 0) ? <EmptyState error={error} onRetry={() => void loadPage()} /> : null}
-        {!isLoading && !error && items.length > 0 ? <SubmissionTable items={items} onSelect={setSelectedId} /> : null}
+        {!isLoading && !error && items.length > 0 ? <SubmissionTable deliveryStatuses={deliveryStatuses} items={items} onDeliveryChange={handleDeliveryChange} onSelect={setSelectedId} /> : null}
 
         {!isLoading && !error && items.length > 0 ? (
           <TablePagination
@@ -674,6 +755,7 @@ export function SubmissionsPage() {
           />
         ) : null}
       </section>
+      <ReportDeliveryCampaignDialog busy={campaignBusy} campaign={campaign} error={campaignError} onClose={() => setCampaignDialogOpen(false)} onConfirm={() => void confirmCampaign()} open={campaignDialogOpen} />
       <SubmissionDetailDrawer
         detail={detail}
         error={detailError}
