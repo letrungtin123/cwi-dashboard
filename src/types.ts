@@ -169,7 +169,7 @@ export type ReportDeliveryFile = {
 }
 
 export type ReportDeliveryStatus = {
-  emailStatus: 'not_sent' | 'queued' | 'sending' | 'sent' | 'failed' | 'not_ready'
+  emailStatus: 'not_sent' | 'queued' | 'sending' | 'sent' | 'failed' | 'unknown' | 'not_ready'
   emailSentAt: string | null
   emailLastError: string | null
   file: ReportDeliveryFile
@@ -185,6 +185,7 @@ export type ReportDeliveryCampaign = {
   failedCount: number
   id: string
   missingPdfUsers: number
+  unknownCount: number
   queuedCount: number
   sentCount: number
   snapshotAt: string

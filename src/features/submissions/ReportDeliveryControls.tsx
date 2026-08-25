@@ -14,6 +14,7 @@ function emailStatusLabel(status: ReportDeliveryStatus['emailStatus']) {
   if (status === 'sending') return 'Đang gửi email'
   if (status === 'queued') return 'Đang chờ gửi'
   if (status === 'failed') return 'Gửi lỗi, sẽ thử lại'
+  if (status === 'unknown') return 'Cần kiểm tra trước khi gửi lại'
   return 'Chưa gửi email'
 }
 

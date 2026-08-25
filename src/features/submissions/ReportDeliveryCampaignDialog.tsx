@@ -64,9 +64,11 @@ export function ReportDeliveryCampaignDialog({
                 <span><strong>{formatNumber(campaign.sentCount)}</strong>Đã gửi</span>
                 <span><strong>{formatNumber(campaign.queuedCount)}</strong>Đang chờ</span>
                 <span><strong>{formatNumber(campaign.failedCount)}</strong>Gửi lỗi</span>
+                <span><strong>{formatNumber(campaign.unknownCount)}</strong>Cần kiểm tra</span>
               </div>
             </div>
           )}
+          {campaign.errorMessage ? <p className="report-delivery-error">{campaign.errorMessage}</p> : null}
           {error ? <p className="report-delivery-error">{error}</p> : null}
         </div>
 

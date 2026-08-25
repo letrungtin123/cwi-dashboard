@@ -2193,6 +2193,12 @@ td:nth-child(7) {
   color: #be123c;
 }
 
+.delivery-badge.is-unknown {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #9a3412;
+}
+
 .delivery-badge.is-missing {
   background: #fff8e7;
   border-color: #f8db9b;
@@ -2549,7 +2555,7 @@ td:nth-child(7) {
 .report-progress-grid {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .report-progress-grid span {

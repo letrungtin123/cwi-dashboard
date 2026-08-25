@@ -100,6 +100,7 @@ function DeliveryStatusBadge({ status }: { status: ReportDeliveryStatus | null }
   if (emailStatus === 'sent') return <span className="delivery-badge is-sent">Đã gửi email</span>
   if (emailStatus === 'sending' || emailStatus === 'queued') return <span className="delivery-badge is-pending">Đang xử lý</span>
   if (emailStatus === 'failed') return <span className="delivery-badge is-failed">Gửi lỗi</span>
+  if (emailStatus === 'unknown') return <span className="delivery-badge is-unknown">Cần kiểm tra</span>
   if (status?.file.available) return <span className="delivery-badge is-ready">Đã có PDF</span>
   return <span className="delivery-badge is-missing">Thiếu PDF</span>
 }
@@ -649,14 +650,38 @@ export function SubmissionsPage() {
     const timer = window.setInterval(() => {
       void getReportDeliveryCampaign(campaign.id).then((nextCampaign) => {
         if (active) setCampaign(nextCampaign)
+        if (active) setCampaignError('')
         if (active && ['completed', 'failed', 'expired'].includes(nextCampaign.status)) void loadPage()
-      }).catch(() => undefined)
+      }).catch((caught) => {
+        if (active) setCampaignError(caught instanceof Error ? caught.message : 'Không cập nhật được trạng thái gửi email.')
+      })
     }, 2000)
     return () => {
       active = false
       window.clearInterval(timer)
     }
-  }, [campaign, loadPage])
+  }, [campaign?.id, campaign?.status, loadPage])
+
+  useEffect(() => {
+    if (!campaign || !['queued', 'dispatching', 'sending'].includes(campaign.status) || !items.length) return
+    let active = true
+    const refreshStatuses = async () => {
+      try {
+        const rows = await getReportDeliveryStatuses(items.map((item) => item.id))
+        if (!active) return
+        setDeliveryStatuses(Object.fromEntries(rows.map((row) => [row.submissionId, row])))
+        setDeliveryStatusError('')
+      } catch (caught) {
+        if (active) setDeliveryStatusError(caught instanceof Error ? caught.message : 'Không cập nhật được trạng thái file PDF.')
+      }
+    }
+    void refreshStatuses()
+    const timer = window.setInterval(() => void refreshStatuses(), 2000)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+    }
+  }, [campaign?.id, campaign?.status, items])
 
   async function openCampaignDialog() {
     setCampaignBusy(true)
@@ -767,5 +792,3 @@ export function SubmissionsPage() {
     </main>
   )
 }
-
-
