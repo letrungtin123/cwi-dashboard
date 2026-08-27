@@ -28,6 +28,7 @@ import type { ExportFilters, PrivacyConsent, ReportDeliveryCampaign, ReportDeliv
 
 type StatusOption = 'all' | SubmissionStatus
 type RoundtableOption = 'all' | 'true' | 'false'
+type ReportPdfOption = 'all' | 'true' | 'false'
 type SelectOption<T extends string> = { description?: string; label: string; value: T }
 type PageCursor = { before: string; beforeId: string } | null
 
@@ -68,11 +69,18 @@ const roundtableOptions: Array<SelectOption<RoundtableOption>> = [
   { description: 'Chỉ người không đăng ký', label: 'Không đăng ký', value: 'false' },
 ]
 
-function buildFilters(search: string, status: StatusOption, roundtable: RoundtableOption, limit: number, cursor: PageCursor): SubmissionFilters {
+const reportPdfOptions: Array<SelectOption<ReportPdfOption>> = [
+  { description: 'Không lọc theo file báo cáo', label: 'Tất cả', value: 'all' },
+  { description: 'Chỉ người chưa được tải file báo cáo', label: 'Thiếu PDF', value: 'false' },
+  { description: 'Chỉ người đã được tải file báo cáo', label: 'Đã có PDF', value: 'true' },
+]
+
+function buildFilters(search: string, status: StatusOption, roundtable: RoundtableOption, reportPdf: ReportPdfOption, limit: number, cursor: PageCursor): SubmissionFilters {
   return {
     before: cursor?.before,
     beforeId: cursor?.beforeId,
     limit,
+    reportPdfUploaded: reportPdf === 'all' ? undefined : reportPdf === 'true',
     roundtable: roundtable === 'all' ? undefined : roundtable,
     search: search || undefined,
     status: status === 'all' ? undefined : status,
@@ -523,6 +531,7 @@ export function SubmissionsPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<StatusOption>('all')
   const [roundtable, setRoundtable] = useState<RoundtableOption>('all')
+  const [reportPdf, setReportPdf] = useState<ReportPdfOption>('all')
   const [pageSize, setPageSize] = useState(defaultPageSize)
   const [page, setPage] = useState(1)
   const [pageCursors, setPageCursors] = useState<Array<PageCursor>>([null])
@@ -552,7 +561,7 @@ export function SubmissionsPage() {
   }, [draftSearch])
 
   const cursor = pageCursors[page - 1] ?? null
-  const filters = useMemo(() => buildFilters(search, status, roundtable, pageSize, cursor), [cursor, pageSize, roundtable, search, status])
+  const filters = useMemo(() => buildFilters(search, status, roundtable, reportPdf, pageSize, cursor), [cursor, pageSize, reportPdf, roundtable, search, status])
   const exportFilters = useMemo<ExportFilters>(() => ({
     roundtableRegistered: roundtable === 'all' ? undefined : roundtable === 'true',
     search: search || undefined,
@@ -757,6 +766,7 @@ export function SubmissionsPage() {
           </div>
           <CustomSelect label="Trạng thái" onChange={(next) => { setStatus(next); setPage(1); setPageCursors([null]) }} options={statusOptions} value={status} />
           <CustomSelect label="Roundtable" onChange={(next) => { setRoundtable(next); setPage(1); setPageCursors([null]) }} options={roundtableOptions} value={roundtable} />
+          <CustomSelect label="Tệp PDF" onChange={(next) => { setReportPdf(next); setPage(1); setPageCursors([null]) }} options={reportPdfOptions} value={reportPdf} />
         </div>
 
         {isLoading ? <TableSkeleton /> : null}

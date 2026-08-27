@@ -719,7 +719,7 @@ h4 {
   border-bottom: 1px solid var(--line-soft);
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(280px, 1fr) 230px 230px;
+  grid-template-columns: minmax(280px, 1fr) repeat(3, 230px);
   padding: 14px 18px;
   position: relative;
   z-index: 25;
