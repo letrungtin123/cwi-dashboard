@@ -2802,3 +2802,131 @@ td:nth-child(7) {
   color: var(--muted);
   font-weight: 700;
 }
+
+/* Keep the submission table dense and stable when row content varies. */
+.content-surface .table-wrap table {
+  min-width: 1540px;
+}
+
+.content-surface .table-wrap tbody tr {
+  height: 104px;
+}
+
+.content-surface .table-wrap table th,
+.content-surface .table-wrap table td {
+  height: 104px;
+  padding: 13px 14px;
+}
+
+.content-surface .table-wrap .person-cell,
+.content-surface .table-wrap .stack-cell,
+.content-surface .table-wrap .count-cell {
+  align-content: center;
+  min-height: 72px;
+}
+
+.content-surface .table-wrap .person-cell strong,
+.content-surface .table-wrap .person-cell em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.content-surface .table-wrap .stack-cell > span:not(.status-badge) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.35;
+  max-height: 32px;
+  overflow: hidden;
+}
+
+.content-surface .table-wrap .table-row-actions,
+.content-surface .table-wrap .report-table-actions {
+  align-items: center;
+  gap: 6px;
+}
+
+.content-surface .table-wrap .table-row-actions {
+  min-height: 36px;
+}
+
+.content-surface .table-wrap .table-row-actions > .icon-button,
+.content-surface .table-wrap .table-download-button {
+  height: 36px;
+  width: 36px;
+}
+
+.content-surface .table-wrap .table-upload-button {
+  height: 36px;
+  min-height: 36px;
+  min-width: 104px;
+  padding: 0 10px;
+}
+
+.content-surface > .surface-head .surface-actions > .primary-button,
+.content-surface > .surface-head .surface-actions > .secondary-button,
+.content-surface > .surface-head .surface-actions .export-button {
+  height: 42px;
+  min-height: 42px;
+}
+
+.content-surface .table-wrap table th:nth-child(8),
+.content-surface .table-wrap table td:nth-child(8) {
+  width: 224px;
+}
+
+.email-single-line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.content-surface .table-wrap .email-single-line,
+.submission-card .email-single-line {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: normal;
+}
+
+.detail-grid .email-single-line {
+  display: block;
+  flex: 1 1 auto;
+  overflow-wrap: normal;
+}
+
+.detail-section p .email-single-line {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: normal;
+  vertical-align: bottom;
+}
+
+/* A slim scrollbar keeps the detail drawer usable without competing with its content. */
+.detail-drawer .drawer-content {
+  overscroll-behavior: contain;
+  scrollbar-color: rgba(20, 78, 175, 0.42) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.detail-drawer .drawer-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.detail-drawer .drawer-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.detail-drawer .drawer-content::-webkit-scrollbar-thumb {
+  background: rgba(20, 78, 175, 0.36);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+.detail-drawer .drawer-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(20, 78, 175, 0.58);
+  background-clip: padding-box;
+}

@@ -330,7 +330,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onSelect }
                 <td>
                   <div className="person-cell">
                     <strong>{item.fullName}</strong>
-                    <span>{item.email}</span>
+                    <span className="email-single-line" title={item.email}>{item.email}</span>
                     <em>{item.position}</em>
                   </div>
                 </td>
@@ -391,7 +391,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onSelect }
               <ReportBadge report={item.report} />
               <DeliveryStatusBadge status={deliveryStatuses[item.id] ?? null} />
             </div>
-            <p>{item.email}</p>
+            <p className="email-single-line" title={item.email}>{item.email}</p>
             <ReportDownloadLink report={item.report} />
             <div className="submission-card-result">
               <span>Kết quả</span>
@@ -443,7 +443,7 @@ function SubmissionDetailDrawer({
         {isLoading ? <DrawerSkeleton /> : null}
 
         {error && !isLoading ? (
-          <div className="drawer-content">
+          <div className="drawer-content detail-drawer-scroll">
             <section className="drawer-error">
               <CircleAlert aria-hidden="true" size={30} />
               <h3>Không tải được chi tiết</h3>
@@ -457,7 +457,7 @@ function SubmissionDetailDrawer({
         ) : null}
 
         {detail && !isLoading && !error ? (
-          <div className="drawer-content">
+          <div className="drawer-content detail-drawer-scroll">
             <section className="detail-section detail-section-hero">
               <div className="detail-summary">
                 <StatusBadge status={detail.submissionStatus} />
@@ -474,7 +474,7 @@ function SubmissionDetailDrawer({
             <section className="detail-grid">
               <div>
                 <Mail aria-hidden="true" size={16} />
-                <span>{detail.email}</span>
+                <span className="email-single-line" title={detail.email}>{detail.email}</span>
               </div>
               <div>
                 <Briefcase aria-hidden="true" size={16} />
@@ -493,7 +493,9 @@ function SubmissionDetailDrawer({
             {detail.roundtableRegistration ? (
               <section className="detail-section">
                 <h3>Roundtable lãnh đạo</h3>
-                <p>{detail.roundtableRegistration.fullName} · {detail.roundtableRegistration.email}</p>
+                <p>
+                  {detail.roundtableRegistration.fullName} · <span className="email-single-line" title={detail.roundtableRegistration.email}>{detail.roundtableRegistration.email}</span>
+                </p>
                 <p>{detail.roundtableRegistration.position || 'Chưa nhập chức vụ'} · {formatDateTime(detail.roundtableRegistration.registeredAt)}</p>
               </section>
             ) : null}
