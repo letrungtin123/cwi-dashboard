@@ -47,7 +47,9 @@ function readCookie(name: string) {
 
 export function apiUrl(path: string) {
   if (/^https?:\/\//i.test(path)) return path
-  return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  const baseUrl = API_BASE_URL.replace(/\/api$/i, '')
+  return `${baseUrl}${normalizedPath}`
 }
 
 export function setCsrfToken(token: string) {
