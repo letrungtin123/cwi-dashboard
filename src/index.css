@@ -2667,7 +2667,7 @@ td:nth-child(7) {
   }
 }
 
-.content-surface .table-skeleton-row { grid-template-columns: 23% 26% 8% 12% 15% 13% 12% 38px; }
+.content-surface .table-skeleton-row { grid-template-columns: 18% 22% 7% 12% 12% 10% 280px; }
 
 
 /* submission table refinements */
@@ -2686,12 +2686,12 @@ td:nth-child(7) {
 
 .content-surface .table-wrap table th:nth-child(1),
 .content-surface .table-wrap table td:nth-child(1) {
-  width: 17%;
+  width: 18%;
 }
 
 .content-surface .table-wrap table th:nth-child(2),
 .content-surface .table-wrap table td:nth-child(2) {
-  width: 20%;
+  width: 22%;
 }
 
 .content-surface .table-wrap table th:nth-child(3),
@@ -2701,33 +2701,22 @@ td:nth-child(7) {
 
 .content-surface .table-wrap table th:nth-child(4),
 .content-surface .table-wrap table td:nth-child(4) {
-  width: 8%;
+  width: 12%;
 }
 
 .content-surface .table-wrap table th:nth-child(5),
 .content-surface .table-wrap table td:nth-child(5) {
-  width: 10%;
+  width: 12%;
 }
 
 .content-surface .table-wrap table th:nth-child(6),
 .content-surface .table-wrap table td:nth-child(6) {
-  width: 16%;
+  width: 10%;
 }
 
 .content-surface .table-wrap table th:nth-child(7),
 .content-surface .table-wrap table td:nth-child(7) {
-  width: 8%;
-}
-
-.content-surface .table-wrap table th:nth-child(8),
-.content-surface .table-wrap table td:nth-child(8) {
-  width: 10%;
-}
-
-.content-surface .table-wrap table th:nth-child(9),
-.content-surface .table-wrap table td:nth-child(9) {
-  width: 56px;
-  text-align: center;
+  width: 280px;
 }
 
 .content-surface .table-wrap .status-badge,
@@ -2777,27 +2766,7 @@ td:nth-child(7) {
 
 
 .content-surface .table-skeleton-row {
-  grid-template-columns: 17% 20% 7% 8% 16% 8% 10% 180px;
-}
-
-.content-surface .table-wrap table th:nth-child(5),
-.content-surface .table-wrap table td:nth-child(5) {
-  width: 16%;
-}
-
-.content-surface .table-wrap table th:nth-child(6),
-.content-surface .table-wrap table td:nth-child(6) {
-  width: 8%;
-}
-
-.content-surface .table-wrap table th:nth-child(7),
-.content-surface .table-wrap table td:nth-child(7) {
-  width: 10%;
-}
-
-.content-surface .table-wrap table th:nth-child(8),
-.content-surface .table-wrap table td:nth-child(8) {
-  width: 180px;
+  grid-template-columns: 18% 22% 7% 12% 12% 10% 280px;
 }
 
 .report-table-actions,
@@ -2884,6 +2853,7 @@ td:nth-child(7) {
 .content-surface .table-wrap .report-table-actions {
   align-items: center;
   gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .content-surface .table-wrap .table-row-actions {
@@ -2915,11 +2885,6 @@ td:nth-child(7) {
 .content-surface > .surface-head .surface-actions .export-button {
   height: 42px;
   min-height: 42px;
-}
-
-.content-surface .table-wrap table th:nth-child(8),
-.content-surface .table-wrap table td:nth-child(8) {
-  width: 224px;
 }
 
 .email-single-line {
