@@ -2857,7 +2857,15 @@ td:nth-child(7) {
 }
 
 .content-surface .table-wrap .table-row-actions {
+  justify-content: flex-end;
   min-height: 36px;
+  margin-left: auto;
+  width: 100%;
+}
+
+.content-surface .table-wrap table th:nth-child(7),
+.content-surface .table-wrap table td:nth-child(7) {
+  text-align: right;
 }
 
 .content-surface .table-wrap .table-row-actions > .icon-button,
