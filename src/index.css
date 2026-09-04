@@ -2263,6 +2263,38 @@ td:nth-child(7) {
   opacity: 0.58;
 }
 
+.table-retry-button {
+  align-items: center;
+  background: #fff5f5;
+  border: 1px solid #fecaca;
+  border-radius: 7px;
+  color: #b42318;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  gap: 6px;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 10px;
+  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, color 0.16s ease, transform 0.16s ease;
+  white-space: nowrap;
+}
+
+.table-retry-button:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.table-retry-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 .table-upload-button span {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2792,6 +2824,13 @@ td:nth-child(7) {
   min-width: 0;
 }
 
+.report-file-result-progress {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 6px 9px;
+  white-space: nowrap;
+}
+
 .report-file-result > span {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2861,6 +2900,13 @@ td:nth-child(7) {
   height: 36px;
   min-height: 36px;
   min-width: 104px;
+  padding: 0 10px;
+}
+
+.content-surface .table-wrap .table-retry-button {
+  height: 36px;
+  min-height: 36px;
+  min-width: 92px;
   padding: 0 10px;
 }
 

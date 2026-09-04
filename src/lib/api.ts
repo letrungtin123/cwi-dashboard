@@ -128,6 +128,7 @@ function buildSubmissionQuery(filters: SubmissionFilters) {
   if (filters.status) params.set('status', filters.status)
   if (filters.roundtable) params.set('roundtable', filters.roundtable)
   if (filters.reportPdfUploaded !== undefined) params.set('reportPdfUploaded', String(filters.reportPdfUploaded))
+  if (filters.emailStatus) params.set('emailStatus', filters.emailStatus)
   if (filters.search) params.set('search', filters.search)
 
   return params.toString()
@@ -246,4 +247,8 @@ export async function uploadReportPdf(id: string, file: File) {
   }
   if (!payload || !('data' in payload)) throw new ApiError(response.status, 'invalid_response', 'Phản hồi từ hệ thống không hợp lệ.')
   return payload.data
+}
+
+export function retryReportEmail(id: string) {
+  return request<ReportDeliveryStatus>(`/api/v1/admin/report-delivery/submissions/${encodeURIComponent(id)}/retry-email`, { method: 'POST' }, { csrf: true })
 }

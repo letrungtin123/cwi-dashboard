@@ -27,8 +27,8 @@ import { formatDateTime, formatNumber, valueToText } from '@/lib/format'
 import type { ExportFilters, PrivacyConsent, ReportDeliveryCampaign, ReportDeliveryStatus, ReportSummary, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus } from '@/types'
 
 type StatusOption = 'all' | SubmissionStatus
-type RoundtableOption = 'all' | 'true' | 'false'
 type ReportPdfOption = 'all' | 'true' | 'false'
+type EmailStatusOption = 'all' | 'failed'
 type SelectOption<T extends string> = { description?: string; label: string; value: T }
 type PageCursor = { before: string; beforeId: string } | null
 
@@ -63,25 +63,24 @@ const statusOptions: Array<SelectOption<StatusOption>> = [
   { description: 'Đồng ý bảo mật và gửi đủ hai phần', label: 'Gửi đủ hai phần', value: 'full_private_report' },
 ]
 
-const roundtableOptions: Array<SelectOption<RoundtableOption>> = [
-  { description: 'Không lọc theo đăng ký Roundtable', label: 'Roundtable: tất cả', value: 'all' },
-  { description: 'Chỉ người có đăng ký tham dự', label: 'Có đăng ký', value: 'true' },
-  { description: 'Chỉ người không đăng ký', label: 'Không đăng ký', value: 'false' },
-]
-
 const reportPdfOptions: Array<SelectOption<ReportPdfOption>> = [
   { description: 'Không lọc theo file báo cáo', label: 'Tất cả', value: 'all' },
   { description: 'Chỉ người chưa được tải file báo cáo', label: 'Thiếu PDF', value: 'false' },
   { description: 'Chỉ người đã được tải file báo cáo', label: 'Đã có PDF', value: 'true' },
 ]
 
-function buildFilters(search: string, status: StatusOption, roundtable: RoundtableOption, reportPdf: ReportPdfOption, limit: number, cursor: PageCursor): SubmissionFilters {
+const emailStatusOptions: Array<SelectOption<EmailStatusOption>> = [
+  { description: 'Hiển thị tất cả trạng thái email', label: 'Tất cả email', value: 'all' },
+  { description: 'Chỉ người gửi email bị lỗi', label: 'Gửi email lỗi', value: 'failed' },
+]
+
+function buildFilters(search: string, status: StatusOption, reportPdf: ReportPdfOption, emailStatus: EmailStatusOption, limit: number, cursor: PageCursor): SubmissionFilters {
   return {
     before: cursor?.before,
     beforeId: cursor?.beforeId,
     limit,
     reportPdfUploaded: reportPdf === 'all' ? undefined : reportPdf === 'true',
-    roundtable: roundtable === 'all' ? undefined : roundtable,
+    emailStatus: emailStatus === 'all' ? undefined : emailStatus,
     search: search || undefined,
     status: status === 'all' ? undefined : status,
   }
@@ -250,8 +249,6 @@ function TableSkeleton() {
             <SkeletonLine className="skeleton-person" />
             <SkeletonLine className="skeleton-status" />
             <SkeletonLine className="skeleton-score" />
-            <SkeletonLine className="skeleton-chip" />
-            {/* Temporarily hide the Report column on desktop. */}
             <SkeletonLine className="skeleton-report" />
             <SkeletonLine className="skeleton-status" />
             <SkeletonLine className="skeleton-date" />
@@ -317,7 +314,6 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onSelect }
               <th>Người gửi</th>
               <th>Trạng thái</th>
               <th>Số câu</th>
-              <th>Roundtable</th>
               <th>Kết quả</th>
               <th>Email kết quả</th>
               <th>Thời gian</th>
@@ -346,12 +342,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onSelect }
                     <span>câu trả lời</span>
                   </div>
                 </td>
-                <td>
-                  <span className={item.roundtableRegistered ? 'roundtable-yes' : 'roundtable-no'}>
-                    {item.roundtableRegistered ? 'Có đăng ký' : 'Không'}
-                  </span>
-                </td>
-                <td><ReportDeliveryFileStatus status={deliveryStatuses[item.id] ?? null} /></td>
+                <td><ReportDeliveryFileStatus report={item.report} status={deliveryStatuses[item.id] ?? null} /></td>
                 <td><DeliveryStatusBadge status={deliveryStatuses[item.id] ?? null} /></td>
                 <td>{formatDateTime(item.submittedAt)}</td>
                 <td>
@@ -399,7 +390,6 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onSelect }
             </div>
             <div className="submission-card-meta">
               <span>{item.answersCount} câu trả lời</span>
-              <span>{item.roundtableRegistered ? 'Có đăng ký Roundtable' : 'Không đăng ký Roundtable'}</span>
             </div>
             <time>{formatDateTime(item.submittedAt)}</time>
           </motion.article>
@@ -532,8 +522,8 @@ export function SubmissionsPage() {
   const [draftSearch, setDraftSearch] = useState('')
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<StatusOption>('all')
-  const [roundtable, setRoundtable] = useState<RoundtableOption>('all')
   const [reportPdf, setReportPdf] = useState<ReportPdfOption>('all')
+  const [emailStatus, setEmailStatus] = useState<EmailStatusOption>('all')
   const [pageSize, setPageSize] = useState(defaultPageSize)
   const [page, setPage] = useState(1)
   const [pageCursors, setPageCursors] = useState<Array<PageCursor>>([null])
@@ -553,6 +543,17 @@ export function SubmissionsPage() {
   const [campaignDialogOpen, setCampaignDialogOpen] = useState(false)
   const [campaignBusy, setCampaignBusy] = useState(false)
   const [campaignError, setCampaignError] = useState('')
+  const itemsRef = useRef(items)
+  const statsRef = useRef(stats)
+
+  useEffect(() => {
+    itemsRef.current = items
+  }, [items])
+
+  useEffect(() => {
+    statsRef.current = stats
+  }, [stats])
+
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       setSearch(draftSearch.trim())
@@ -563,26 +564,30 @@ export function SubmissionsPage() {
   }, [draftSearch])
 
   const cursor = pageCursors[page - 1] ?? null
-  const filters = useMemo(() => buildFilters(search, status, roundtable, reportPdf, pageSize, cursor), [cursor, pageSize, reportPdf, roundtable, search, status])
+  const filters = useMemo(() => buildFilters(search, status, reportPdf, emailStatus, pageSize, cursor), [cursor, emailStatus, pageSize, reportPdf, search, status])
   const exportFilters = useMemo<ExportFilters>(() => ({
-    roundtableRegistered: roundtable === 'all' ? undefined : roundtable === 'true',
     search: search || undefined,
     status: status === 'all' ? undefined : status,
-  }), [roundtable, search, status])
+  }), [search, status])
 
-  const loadStats = useCallback(async () => {
+  const loadStats = useCallback(async (options: { silent?: boolean } = {}) => {
     try {
-      setStats(await getSubmissionStats())
+      const nextStats = await getSubmissionStats()
+      setStats(nextStats)
+      statsRef.current = nextStats
     } catch (caught) {
+      if (options.silent) return
       const message = caught instanceof Error ? caught.message : 'Không tải được thống kê.'
       setError(message)
     }
   }, [])
 
-  const loadPage = useCallback(async () => {
-    setIsLoading(true)
-    setError("")
-    setDeliveryStatusError("")
+  const loadPage = useCallback(async (options: { silent?: boolean } = {}) => {
+    if (!options.silent) {
+      setIsLoading(true)
+      setError("")
+      setDeliveryStatusError("")
+    }
 
     try {
       const response = await listSubmissionsPage(filters)
@@ -592,7 +597,7 @@ export function SubmissionsPage() {
       try {
         deliveryRows = await getReportDeliveryStatuses(response.items.map((item) => item.id))
       } catch (caught) {
-        setDeliveryStatusError(caught instanceof Error ? caught.message : "Không tải được trạng thái file PDF.")
+        if (!options.silent) setDeliveryStatusError(caught instanceof Error ? caught.message : "Không tải được trạng thái file PDF.")
       }
       setDeliveryStatuses(Object.fromEntries(deliveryRows.map((row) => [row.submissionId, row])))
 
@@ -607,10 +612,11 @@ export function SubmissionsPage() {
         return next
       })
     } catch (caught) {
+      if (options.silent) return
       const message = caught instanceof Error ? caught.message : 'Không tải được dữ liệu.'
       setError(message)
     } finally {
-      setIsLoading(false)
+      if (!options.silent) setIsLoading(false)
     }
   }, [filters, page])
 
@@ -621,6 +627,45 @@ export function SubmissionsPage() {
   useEffect(() => {
     void loadPage()
   }, [loadPage])
+
+  useEffect(() => {
+    let active = true
+    let checking = false
+
+    const refreshInBackground = async () => {
+      if (!active || checking || document.visibilityState !== 'visible') return
+      checking = true
+
+      try {
+        const nextStats = await getSubmissionStats()
+        if (!active) return
+
+        const countChanged = statsRef.current?.totalSubmissions !== nextStats.totalSubmissions
+        const reportInProgress = itemsRef.current.some((item) => item.report.status === 'generating')
+        setStats(nextStats)
+        statsRef.current = nextStats
+
+        if (countChanged || reportInProgress) await loadPage({ silent: true })
+      } catch {
+        // Background refresh is best effort; keep the last usable dashboard state.
+      } finally {
+        checking = false
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') void refreshInBackground()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    const timer = window.setInterval(() => void refreshInBackground(), 10000)
+    return () => {
+      active = false
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.clearInterval(timer)
+    }
+  }, [loadPage])
+
   useEffect(() => {
     if (!selectedId) {
       setDetail(null)
@@ -767,8 +812,8 @@ export function SubmissionsPage() {
             />
           </div>
           <CustomSelect label="Trạng thái" onChange={(next) => { setStatus(next); setPage(1); setPageCursors([null]) }} options={statusOptions} value={status} />
-          <CustomSelect label="Roundtable" onChange={(next) => { setRoundtable(next); setPage(1); setPageCursors([null]) }} options={roundtableOptions} value={roundtable} />
           <CustomSelect label="Tệp PDF" onChange={(next) => { setReportPdf(next); setPage(1); setPageCursors([null]) }} options={reportPdfOptions} value={reportPdf} />
+          <CustomSelect label="Email" onChange={(next) => { setEmailStatus(next); setPage(1); setPageCursors([null]) }} options={emailStatusOptions} value={emailStatus} />
         </div>
 
         {isLoading ? <TableSkeleton /> : null}
