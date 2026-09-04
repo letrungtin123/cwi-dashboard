@@ -37,7 +37,9 @@ type LinkFilter = 'all' | RoundtableLinkStatus
 type SelectOption<T extends string> = { description?: string; label: string; value: T }
 
 const defaultPageSize = 10
-type PageCursor = { before: string; beforeId: string } | null
+// The API owns the sort key and signs the cursor so new registrations cannot
+// make the dashboard drift from the server's newest-first pagination order.
+type PageCursor = string | null
 const searchDebounceMs = 350
 
 const statusMeta: Record<SubmissionStatus, { className: string; label: string }> = {
@@ -69,8 +71,7 @@ const linkOptions: Array<SelectOption<LinkFilter>> = [
 
 function buildFilters(search: string, linkStatus: LinkFilter, limit: number, cursor: PageCursor): RoundtableRegistrationFilters {
   return {
-    before: cursor?.before,
-    beforeId: cursor?.beforeId,
+    cursor: cursor ?? undefined,
     limit,
     linkStatus: linkStatus === 'all' ? undefined : linkStatus,
     search: search || undefined,
@@ -584,10 +585,7 @@ export function RoundtablePage() {
       setItems(response.items)
       setHasNextPage(response.hasNextPage)
 
-      const lastItem = response.items.at(-1)
-      const nextCursor: PageCursor = lastItem
-        ? { before: lastItem.registeredAt, beforeId: lastItem.id }
-        : null
+      const nextCursor: PageCursor = response.nextCursor
 
       setPageCursors((current) => {
         const next = current.slice(0, page + 1)
@@ -719,5 +717,4 @@ export function RoundtablePage() {
     </main>
   )
 }
-
 
