@@ -14,7 +14,7 @@ npm run lint
 npm run build
 ```
 
-Frontend chỉ dùng biến `VITE_`. Không đặt database URL, service-role key, SMTP secret hay secret backend trong `.env` của dashboard.
+Frontend chỉ dùng biến `VITE_`. Release production mặc định dùng API cùng origin `/api`; `.env` localhost chỉ phục vụ dev. Không đặt database URL, service-role key, SMTP secret hay secret backend trong `.env` của dashboard.
 
 ## Cập nhật production
 
