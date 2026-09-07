@@ -254,3 +254,7 @@ export async function uploadReportPdf(id: string, file: File) {
 export function retryReportEmail(id: string) {
   return request<ReportDeliveryStatus>(`/api/v1/admin/report-delivery/submissions/${encodeURIComponent(id)}/retry-email`, { method: 'POST' }, { csrf: true })
 }
+
+export function retryReportGeneration(id: string) {
+  return request<{ jobId: string | null; status: string; submissionId: string }>(`/api/v1/admin/survey-submissions/${encodeURIComponent(id)}/retry-report`, { method: 'POST' }, { csrf: true })
+}

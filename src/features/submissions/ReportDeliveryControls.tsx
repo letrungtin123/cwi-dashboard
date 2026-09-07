@@ -1,6 +1,6 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import { CheckCircle2, Download, FileText, LockKeyhole, RotateCcw, Upload, XCircle } from 'lucide-react'
-import { apiUrl, retryReportEmail, uploadReportPdf } from '@/lib/api'
+import { apiUrl, retryReportEmail, retryReportGeneration, uploadReportPdf } from '@/lib/api'
 import type { ReportDeliveryStatus, ReportSummary } from '@/types'
 
 function formatBytes(value: number | null) {
@@ -22,17 +22,22 @@ function emailStatusLabel(status: ReportDeliveryStatus['emailStatus']) {
 export function ReportDeliveryTableCell({
   actionOnly = false,
   onChanged,
+  onReportRetry,
+  report,
   status,
   submissionId,
 }: {
   actionOnly?: boolean
   onChanged: (status: ReportDeliveryStatus) => void
+  onReportRetry: () => Promise<void>
+  report: ReportSummary
   status: ReportDeliveryStatus | null
   submissionId: string
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [isRetrying, setIsRetrying] = useState(false)
+  const [isRetryingReport, setIsRetryingReport] = useState(false)
   const [error, setError] = useState('')
   const file = status?.file
   const locked = Boolean(file?.lockedAt) || status?.emailStatus === 'sent' || status?.emailStatus === 'sending'
@@ -68,7 +73,18 @@ export function ReportDeliveryTableCell({
     }
   }
 
-  if (!status) return <span className="report-table-state report-table-state-error">Chưa tải được trạng thái PDF</span>
+  async function handleReportRetry() {
+    setError('')
+    setIsRetryingReport(true)
+    try {
+      await retryReportGeneration(submissionId)
+      await onReportRetry()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Không tạo lại báo cáo được.')
+    } finally {
+      setIsRetryingReport(false)
+    }
+  }
 
   if (actionOnly) {
     return (
@@ -79,28 +95,39 @@ export function ReportDeliveryTableCell({
             <span className="sr-only">Tải file PDF</span>
           </a>
         ) : null}
-        <input ref={inputRef} accept="application/pdf,.pdf" className="sr-only" onChange={(event) => void handleFileChange(event)} type="file" />
-        <button
-          aria-label={locked ? 'File PDF đã khóa' : file?.available ? 'Thay file PDF' : 'Tải file PDF lên'}
-          className="table-upload-button"
-          disabled={locked || isUploading}
-          onClick={() => inputRef.current?.click()}
-          title={locked ? 'File PDF đã khóa sau khi gửi email' : file?.available ? 'Thay file PDF' : 'Tải file PDF lên'}
-          type="button"
-        >
-          {locked ? <LockKeyhole aria-hidden="true" size={15} /> : <Upload aria-hidden="true" size={15} />}
-          <span>{isUploading ? 'Đang tải...' : locked ? 'Đã khóa' : file?.available ? 'Thay file' : 'Tải lên'}</span>
-        </button>
-        {status.emailStatus === 'failed' ? (
+        {status ? <>
+          <input ref={inputRef} accept="application/pdf,.pdf" className="sr-only" onChange={(event) => void handleFileChange(event)} type="file" />
+          <button
+            aria-label={locked ? 'File PDF đã khóa' : file?.available ? 'Thay file PDF' : 'Tải file PDF lên'}
+            className="table-upload-button"
+            disabled={locked || isUploading}
+            onClick={() => inputRef.current?.click()}
+            title={locked ? 'File PDF đã khóa sau khi gửi email' : file?.available ? 'Thay file PDF' : 'Tải file PDF lên'}
+            type="button"
+          >
+            {locked ? <LockKeyhole aria-hidden="true" size={15} /> : <Upload aria-hidden="true" size={15} />}
+            <span>{isUploading ? 'Đang tải...' : locked ? 'Đã khóa' : file?.available ? 'Thay file' : 'Tải lên'}</span>
+          </button>
+        </> : null}
+        {status?.emailStatus === 'failed' ? (
           <button aria-label="Gửi lại email" className="table-retry-button" disabled={isRetrying} onClick={() => void handleRetry()} title="Gửi lại email" type="button">
             <RotateCcw aria-hidden="true" size={15} />
             <span>{isRetrying ? 'Đang gửi...' : 'Gửi lại'}</span>
           </button>
         ) : null}
+        {report.status === 'failed' ? (
+          <button aria-label="Tạo lại báo cáo" className="table-retry-button report-generation-retry-button" disabled={isRetryingReport} onClick={() => void handleReportRetry()} title={report.errorMessage ?? 'Tạo lại báo cáo và gửi email khi PDF sẵn sàng'} type="button">
+            <RotateCcw aria-hidden="true" size={15} />
+            <span>{isRetryingReport ? 'Đang tạo...' : 'Tạo lại'}</span>
+          </button>
+        ) : null}
+        {!status ? <span className="report-table-state report-table-state-error">Chưa tải được trạng thái PDF</span> : null}
         {error ? <span className="report-table-error" title={error}><XCircle aria-hidden="true" size={14} /><span>Lỗi tải file</span></span> : null}
       </div>
     )
   }
+
+  if (!status) return <span className="report-table-state report-table-state-error">Chưa tải được trạng thái PDF</span>
 
   if (!file?.available) {
     return (
@@ -117,6 +144,12 @@ export function ReportDeliveryTableCell({
           <Upload aria-hidden="true" size={15} />
           <span>{isUploading ? 'Đang tải...' : 'Tải PDF lên'}</span>
         </button>
+        {report.status === 'failed' ? (
+          <button aria-label="Tạo lại báo cáo" className="table-retry-button report-generation-retry-button" disabled={isRetryingReport} onClick={() => void handleReportRetry()} title={report.errorMessage ?? 'Tạo lại báo cáo và gửi email khi PDF sẵn sàng'} type="button">
+            <RotateCcw aria-hidden="true" size={15} />
+            <span>{isRetryingReport ? 'Đang tạo...' : 'Tạo lại'}</span>
+          </button>
+        ) : null}
         {error ? <span className="report-table-error" title={error}><XCircle aria-hidden="true" size={14} /><span>Lỗi tải file</span></span> : null}
       </div>
     )
@@ -158,7 +191,7 @@ export function ReportDeliveryTableCell({
 
 export function ReportDeliveryFileStatus({ report, status }: { report: ReportSummary; status: ReportDeliveryStatus | null }) {
   if (report.status === 'generating') return <span className="report-file-result report-file-result-progress report-generating">Đang tạo báo cáo</span>
-  if (report.status === 'failed') return <span className="report-file-result report-file-result-progress report-failed">Tạo báo cáo lỗi</span>
+  if (report.status === 'failed') return <span className="report-file-result report-file-result-progress report-failed" title={report.errorMessage ?? 'Tạo báo cáo lỗi'}>Tạo báo cáo lỗi</span>
   if (!status) return <span className="report-table-state report-table-state-error">Chưa tải được trạng thái PDF</span>
   if (!status.file.available) return <span className="report-file-result is-missing">Chưa có file PDF</span>
 

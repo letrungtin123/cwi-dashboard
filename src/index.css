@@ -2295,6 +2295,17 @@ td:nth-child(7) {
   opacity: 0.58;
 }
 
+.report-generation-retry-button {
+  background: #fff8eb;
+  border-color: #f8c978;
+  color: #9a5b00;
+}
+
+.report-generation-retry-button:hover:not(:disabled) {
+  background: #fff1d6;
+  border-color: #e8a93f;
+}
+
 .table-upload-button span {
   overflow: hidden;
   text-overflow: ellipsis;

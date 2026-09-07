@@ -304,7 +304,7 @@ function EmptyState({ error, onRetry }: { error: string; onRetry: () => void }) 
   )
 }
 
-function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onSelect }: { deliveryStatuses: Record<string, ReportDeliveryStatus>; items: SubmissionListItem[]; onDeliveryChange: (status: ReportDeliveryStatus) => void; onSelect: (id: string) => void }) {
+function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRetry, onSelect }: { deliveryStatuses: Record<string, ReportDeliveryStatus>; items: SubmissionListItem[]; onDeliveryChange: (status: ReportDeliveryStatus) => void; onReportRetry: () => Promise<void>; onSelect: (id: string) => void }) {
   return (
     <>
       <div className="table-wrap desktop-table">
@@ -347,7 +347,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onSelect }
                 <td>{formatDateTime(item.submittedAt)}</td>
                 <td>
                   <div className="table-row-actions">
-                    <ReportDeliveryTableCell actionOnly onChanged={onDeliveryChange} status={deliveryStatuses[item.id] ?? null} submissionId={item.id} />
+                    <ReportDeliveryTableCell actionOnly onChanged={onDeliveryChange} onReportRetry={onReportRetry} report={item.report} status={deliveryStatuses[item.id] ?? null} submissionId={item.id} />
                     <button className="icon-button" onClick={() => onSelect(item.id)} title="Xem chi tiết" type="button">
                       <Eye aria-hidden="true" size={18} />
                     </button>
@@ -386,7 +386,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onSelect }
             <ReportDownloadLink report={item.report} />
             <div className="submission-card-result">
               <span>Kết quả</span>
-              <ReportDeliveryTableCell onChanged={onDeliveryChange} status={deliveryStatuses[item.id] ?? null} submissionId={item.id} />
+              <ReportDeliveryTableCell onChanged={onDeliveryChange} onReportRetry={onReportRetry} report={item.report} status={deliveryStatuses[item.id] ?? null} submissionId={item.id} />
             </div>
             <div className="submission-card-meta">
               <span>{item.answersCount} câu trả lời</span>
@@ -768,6 +768,10 @@ export function SubmissionsPage() {
   function handleDeliveryChange(next: ReportDeliveryStatus) {
     setDeliveryStatuses((current) => ({ ...current, [next.submissionId]: next }))
   }
+
+  async function handleReportRetry() {
+    await loadPage({ silent: true })
+  }
   return (
     <main className="dashboard-main">
       {isLoading && !stats ? (
@@ -818,7 +822,7 @@ export function SubmissionsPage() {
 
         {isLoading ? <TableSkeleton /> : null}
         {!isLoading && (error || items.length === 0) ? <EmptyState error={error} onRetry={() => void loadPage()} /> : null}
-        {!isLoading && !error && items.length > 0 ? <SubmissionTable deliveryStatuses={deliveryStatuses} items={items} onDeliveryChange={handleDeliveryChange} onSelect={setSelectedId} /> : null}
+        {!isLoading && !error && items.length > 0 ? <SubmissionTable deliveryStatuses={deliveryStatuses} items={items} onDeliveryChange={handleDeliveryChange} onReportRetry={handleReportRetry} onSelect={setSelectedId} /> : null}
 
         {!isLoading && !error && items.length > 0 ? (
           <TablePagination
