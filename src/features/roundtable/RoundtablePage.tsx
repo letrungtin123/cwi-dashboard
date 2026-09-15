@@ -104,7 +104,7 @@ function ReportDownloadLink({ report }: { report: ReportSummary }) {
   if (!report.pdfDownloadUrl) return null
 
   return (
-    <a className="mini-link-button" href={apiUrl(report.pdfDownloadUrl)} rel="noreferrer" target="_blank" title="Tải báo cáo PDF">
+    <a className="mini-link-button" data-tooltip="Tải báo cáo PDF" href={apiUrl(report.pdfDownloadUrl)} rel="noreferrer" target="_blank">
       <FileText aria-hidden="true" size={15} />
       <span>Tải PDF</span>
     </a>
@@ -113,13 +113,12 @@ function ReportDownloadLink({ report }: { report: ReportSummary }) {
 
 function StatTile({ icon, label, tooltip, value }: { icon: ReactNode; label: string; tooltip: string; value: string }) {
   return (
-    <article aria-label={`${label}: ${value}. ${tooltip}`} className="stat-tile" tabIndex={0}>
+    <article aria-label={`${label}: ${value}. ${tooltip}`} className="stat-tile" data-tooltip={tooltip} data-tooltip-wide tabIndex={0}>
       <div className="stat-icon">{icon}</div>
       <div>
         <p>{label}</p>
         <strong>{value}</strong>
       </div>
-      <span className="stat-tooltip" role="tooltip">{tooltip}</span>
     </article>
   )
 }
@@ -291,7 +290,8 @@ function RoundtableTable({ items, onSelect }: { items: RoundtableRegistrationLis
   return (
     <>
       <div className="table-wrap desktop-table roundtable-table">
-        <table>
+        <div className="table-scroll">
+          <table>
           <thead>
             <tr>
               <th>Người đăng ký</th>
@@ -328,14 +328,15 @@ function RoundtableTable({ items, onSelect }: { items: RoundtableRegistrationLis
                 </td>
                 <td>{formatDateTime(item.registeredAt)}</td>
                 <td>
-                  <button className="icon-button" onClick={() => onSelect(item.id)} title="Xem chi tiết" type="button">
+                  <button aria-label="Xem chi tiết" className="icon-button" data-tooltip="Xem chi tiết" onClick={() => onSelect(item.id)} type="button">
                     <ChevronRight aria-hidden="true" size={18} />
                   </button>
                 </td>
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
 
       <div className="mobile-card-list">
@@ -352,7 +353,7 @@ function RoundtableTable({ items, onSelect }: { items: RoundtableRegistrationLis
                 <strong>{item.fullName}</strong>
                 <span>{displayText(item.position, 'Chưa nhập chức vụ')}</span>
               </div>
-              <button className="icon-button" onClick={() => onSelect(item.id)} title="Xem chi tiết" type="button">
+              <button aria-label="Xem chi tiết" className="icon-button" data-tooltip="Xem chi tiết" onClick={() => onSelect(item.id)} type="button">
                 <ChevronRight aria-hidden="true" size={18} />
               </button>
             </div>
@@ -412,7 +413,7 @@ function RoundtableDetailDrawer({
             <p>Chi tiết Roundtable</p>
             <h2>{title}</h2>
           </div>
-          <button className="icon-button" onClick={onClose} title="Đóng" type="button">
+          <button aria-label="Đóng" className="icon-button" data-tooltip="Đóng" onClick={onClose} type="button">
             <X aria-hidden="true" size={18} />
           </button>
         </div>
@@ -655,7 +656,7 @@ export function RoundtablePage() {
         </section>
       )}
 
-      <section className="content-surface">
+      <section aria-busy={isLoading} className="content-surface" data-loading={isLoading}>
         <div className="surface-head">
           <div>
             <p>Danh sách</p>
@@ -717,4 +718,3 @@ export function RoundtablePage() {
     </main>
   )
 }
-

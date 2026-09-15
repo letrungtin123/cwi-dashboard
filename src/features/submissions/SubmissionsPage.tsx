@@ -24,10 +24,10 @@ import { TablePagination } from '@/components/TablePagination'
 import { apiUrl, confirmReportDeliveryCampaign, getReportDeliveryCampaign, getReportDeliveryStatuses, getSubmissionDetail, getSubmissionStats, listSubmissionsPage, previewReportDeliveryCampaign } from '@/lib/api'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { formatDateTime, formatNumber, valueToText } from '@/lib/format'
-import type { ExportFilters, PrivacyConsent, ReportDeliveryCampaign, ReportDeliveryStatus, ReportSummary, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus } from '@/types'
+import type { ExportFilters, PrivacyConsent, ReportDeliveryCampaign, ReportDeliveryStatus, ReportStatus, ReportSummary, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus } from '@/types'
 
 type StatusOption = 'all' | SubmissionStatus
-type ReportPdfOption = 'all' | 'true' | 'false'
+type ReportStatusOption = 'all' | ReportStatus
 type EmailStatusOption = 'all' | 'failed'
 type SelectOption<T extends string> = { description?: string; label: string; value: T }
 type PageCursor = { before: string; beforeId: string } | null
@@ -63,10 +63,13 @@ const statusOptions: Array<SelectOption<StatusOption>> = [
   { description: 'Đồng ý bảo mật và gửi đủ hai phần', label: 'Gửi đủ hai phần', value: 'full_private_report' },
 ]
 
-const reportPdfOptions: Array<SelectOption<ReportPdfOption>> = [
-  { description: 'Không lọc theo file báo cáo', label: 'Tất cả', value: 'all' },
-  { description: 'Chỉ người chưa được tải file báo cáo', label: 'Thiếu PDF', value: 'false' },
-  { description: 'Chỉ người đã được tải file báo cáo', label: 'Đã có PDF', value: 'true' },
+const reportStatusOptions: Array<SelectOption<ReportStatusOption>> = [
+  { description: 'Không lọc theo trạng thái tạo báo cáo', label: 'Tất cả', value: 'all' },
+  { description: 'Chưa có tác vụ tạo báo cáo', label: 'Chưa tạo', value: 'not_started' },
+  { description: 'Báo cáo đang được xử lý', label: 'Đang tạo', value: 'generating' },
+  { description: 'Đã tạo xong báo cáo', label: 'Đã tạo', value: 'completed' },
+  { description: 'Tạo báo cáo thất bại, có thể retry', label: 'Tạo lỗi', value: 'failed' },
+  { description: 'Lượt gửi không tạo báo cáo', label: 'Không tạo', value: 'skipped' },
 ]
 
 const emailStatusOptions: Array<SelectOption<EmailStatusOption>> = [
@@ -74,12 +77,12 @@ const emailStatusOptions: Array<SelectOption<EmailStatusOption>> = [
   { description: 'Chỉ người gửi email bị lỗi', label: 'Gửi email lỗi', value: 'failed' },
 ]
 
-function buildFilters(search: string, status: StatusOption, reportPdf: ReportPdfOption, emailStatus: EmailStatusOption, limit: number, cursor: PageCursor): SubmissionFilters {
+function buildFilters(search: string, status: StatusOption, reportStatus: ReportStatusOption, emailStatus: EmailStatusOption, limit: number, cursor: PageCursor): SubmissionFilters {
   return {
     before: cursor?.before,
     beforeId: cursor?.beforeId,
     limit,
-    reportPdfUploaded: reportPdf === 'all' ? undefined : reportPdf === 'true',
+    reportStatus: reportStatus === 'all' ? undefined : reportStatus,
     emailStatus: emailStatus === 'all' ? undefined : emailStatus,
     search: search || undefined,
     status: status === 'all' ? undefined : status,
@@ -116,7 +119,7 @@ function ReportDownloadLink({ report }: { report: ReportSummary }) {
   if (!report.pdfDownloadUrl) return null
 
   return (
-    <a className="mini-link-button" href={apiUrl(report.pdfDownloadUrl)} rel="noreferrer" target="_blank" title="Tải báo cáo PDF">
+    <a className="mini-link-button" data-tooltip="Tải báo cáo PDF" href={apiUrl(report.pdfDownloadUrl)} rel="noreferrer" target="_blank">
       <Download aria-hidden="true" size={15} />
       <span>Tải PDF</span>
     </a>
@@ -125,13 +128,12 @@ function ReportDownloadLink({ report }: { report: ReportSummary }) {
 
 function StatTile({ icon, label, tooltip, value }: { icon: ReactNode; label: string; tooltip: string; value: string }) {
   return (
-    <article aria-label={`${label}: ${value}. ${tooltip}`} className="stat-tile" tabIndex={0}>
+    <article aria-label={`${label}: ${value}. ${tooltip}`} className="stat-tile" data-tooltip={tooltip} data-tooltip-wide tabIndex={0}>
       <div className="stat-icon">{icon}</div>
       <div>
         <p>{label}</p>
         <strong>{value}</strong>
       </div>
-      <span className="stat-tooltip" role="tooltip">{tooltip}</span>
     </article>
   )
 }
@@ -308,7 +310,8 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
   return (
     <>
       <div className="table-wrap desktop-table">
-        <table>
+        <div className="table-scroll">
+          <table>
           <thead>
             <tr>
               <th>Người gửi</th>
@@ -326,7 +329,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
                 <td>
                   <div className="person-cell">
                     <strong>{item.fullName}</strong>
-                    <span className="email-single-line" title={item.email}>{item.email}</span>
+                    <span className="email-single-line-wrap" data-tooltip={item.email}><span className="email-single-line">{item.email}</span></span>
                     <em>{item.position}</em>
                   </div>
                 </td>
@@ -348,7 +351,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
                 <td>
                   <div className="table-row-actions">
                     <ReportDeliveryTableCell actionOnly onChanged={onDeliveryChange} onReportRetry={onReportRetry} report={item.report} status={deliveryStatuses[item.id] ?? null} submissionId={item.id} />
-                    <button className="icon-button" onClick={() => onSelect(item.id)} title="Xem chi tiết" type="button">
+                    <button aria-label="Xem chi tiết" className="icon-button" data-tooltip="Xem chi tiết" onClick={() => onSelect(item.id)} type="button">
                       <Eye aria-hidden="true" size={18} />
                     </button>
                   </div>
@@ -356,7 +359,8 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
 
       <div className="mobile-card-list">
@@ -373,7 +377,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
                 <strong>{item.fullName}</strong>
                 <span>{item.position}</span>
               </div>
-              <button className="icon-button" onClick={() => onSelect(item.id)} title="Xem chi tiết" type="button">
+              <button aria-label="Xem chi tiết" className="icon-button" data-tooltip="Xem chi tiết" onClick={() => onSelect(item.id)} type="button">
                 <ChevronRight aria-hidden="true" size={18} />
               </button>
             </div>
@@ -382,7 +386,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
               <ReportBadge report={item.report} />
               <DeliveryStatusBadge status={deliveryStatuses[item.id] ?? null} />
             </div>
-            <p className="email-single-line" title={item.email}>{item.email}</p>
+            <p className="email-single-line-wrap" data-tooltip={item.email}><span className="email-single-line">{item.email}</span></p>
             <ReportDownloadLink report={item.report} />
             <div className="submission-card-result">
               <span>Kết quả</span>
@@ -425,7 +429,7 @@ function SubmissionDetailDrawer({
             <p>Chi tiết lượt gửi</p>
             <h2>{title}</h2>
           </div>
-          <button className="icon-button" onClick={onClose} title="Đóng" type="button">
+          <button aria-label="Đóng" className="icon-button" data-tooltip="Đóng" onClick={onClose} type="button">
             <X aria-hidden="true" size={18} />
           </button>
         </div>
@@ -464,7 +468,7 @@ function SubmissionDetailDrawer({
             <section className="detail-grid">
               <div>
                 <Mail aria-hidden="true" size={16} />
-                <span className="email-single-line" title={detail.email}>{detail.email}</span>
+                <span className="email-single-line-wrap" data-tooltip={detail.email}><span className="email-single-line">{detail.email}</span></span>
               </div>
               <div>
                 <Briefcase aria-hidden="true" size={16} />
@@ -484,7 +488,7 @@ function SubmissionDetailDrawer({
               <section className="detail-section">
                 <h3>Roundtable lãnh đạo</h3>
                 <p>
-                  {detail.roundtableRegistration.fullName} · <span className="email-single-line" title={detail.roundtableRegistration.email}>{detail.roundtableRegistration.email}</span>
+                  {detail.roundtableRegistration.fullName} · <span className="email-single-line-wrap" data-tooltip={detail.roundtableRegistration.email}><span className="email-single-line">{detail.roundtableRegistration.email}</span></span>
                 </p>
                 <p>{detail.roundtableRegistration.position || 'Chưa nhập chức vụ'} · {formatDateTime(detail.roundtableRegistration.registeredAt)}</p>
               </section>
@@ -522,7 +526,7 @@ export function SubmissionsPage() {
   const [draftSearch, setDraftSearch] = useState('')
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<StatusOption>('all')
-  const [reportPdf, setReportPdf] = useState<ReportPdfOption>('all')
+  const [reportStatus, setReportStatus] = useState<ReportStatusOption>('all')
   const [emailStatus, setEmailStatus] = useState<EmailStatusOption>('all')
   const [pageSize, setPageSize] = useState(defaultPageSize)
   const [page, setPage] = useState(1)
@@ -564,7 +568,7 @@ export function SubmissionsPage() {
   }, [draftSearch])
 
   const cursor = pageCursors[page - 1] ?? null
-  const filters = useMemo(() => buildFilters(search, status, reportPdf, emailStatus, pageSize, cursor), [cursor, emailStatus, pageSize, reportPdf, search, status])
+  const filters = useMemo(() => buildFilters(search, status, reportStatus, emailStatus, pageSize, cursor), [cursor, emailStatus, pageSize, reportStatus, search, status])
   const exportFilters = useMemo<ExportFilters>(() => ({
     search: search || undefined,
     status: status === 'all' ? undefined : status,
@@ -785,7 +789,7 @@ export function SubmissionsPage() {
         </section>
       )}
 
-      <section className="content-surface">
+      <section aria-busy={isLoading} className="content-surface" data-loading={isLoading}>
         <div className="surface-head">
           <div>
             <p>Danh sách</p>
@@ -816,7 +820,7 @@ export function SubmissionsPage() {
             />
           </div>
           <CustomSelect label="Trạng thái" onChange={(next) => { setStatus(next); setPage(1); setPageCursors([null]) }} options={statusOptions} value={status} />
-          <CustomSelect label="Tệp PDF" onChange={(next) => { setReportPdf(next); setPage(1); setPageCursors([null]) }} options={reportPdfOptions} value={reportPdf} />
+          <CustomSelect label="Báo cáo" onChange={(next) => { setReportStatus(next); setPage(1); setPageCursors([null]) }} options={reportStatusOptions} value={reportStatus} />
           <CustomSelect label="Email" onChange={(next) => { setEmailStatus(next); setPage(1); setPageCursors([null]) }} options={emailStatusOptions} value={emailStatus} />
         </div>
 

@@ -83,6 +83,7 @@ export type SubmissionFilters = {
   beforeId?: string
   cursor?: string
   limit?: number
+  reportStatus?: ReportStatus
   reportPdfUploaded?: boolean
   emailStatus?: 'failed'
   roundtable?: 'true' | 'false'

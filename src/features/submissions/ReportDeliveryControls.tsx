@@ -90,7 +90,7 @@ export function ReportDeliveryTableCell({
     return (
       <div className="report-table-actions">
         {file?.downloadUrl ? (
-          <a className="table-download-button" download href={apiUrl(file.downloadUrl)} title="Tải file PDF">
+          <a aria-label="Tải file PDF" className="table-download-button" data-tooltip="Tải file PDF" download href={apiUrl(file.downloadUrl)}>
             <Download aria-hidden="true" size={15} />
             <span className="sr-only">Tải file PDF</span>
           </a>
@@ -102,7 +102,7 @@ export function ReportDeliveryTableCell({
             className="table-upload-button"
             disabled={locked || isUploading}
             onClick={() => inputRef.current?.click()}
-            title={locked ? 'File PDF đã khóa sau khi gửi email' : file?.available ? 'Thay file PDF' : 'Tải file PDF lên'}
+            data-tooltip={locked ? 'File PDF đã khóa sau khi gửi email' : file?.available ? 'Thay file PDF' : 'Tải file PDF lên'}
             type="button"
           >
             {locked ? <LockKeyhole aria-hidden="true" size={15} /> : <Upload aria-hidden="true" size={15} />}
@@ -110,19 +110,19 @@ export function ReportDeliveryTableCell({
           </button>
         </> : null}
         {status?.emailStatus === 'failed' ? (
-          <button aria-label="Gửi lại email" className="table-retry-button" disabled={isRetrying} onClick={() => void handleRetry()} title="Gửi lại email" type="button">
+          <button aria-label="Gửi lại email" className="table-retry-button" data-tooltip="Gửi lại email" disabled={isRetrying} onClick={() => void handleRetry()} type="button">
             <RotateCcw aria-hidden="true" size={15} />
             <span>{isRetrying ? 'Đang gửi...' : 'Gửi lại'}</span>
           </button>
         ) : null}
         {report.status === 'failed' ? (
-          <button aria-label="Tạo lại báo cáo" className="table-retry-button report-generation-retry-button" disabled={isRetryingReport} onClick={() => void handleReportRetry()} title={report.errorMessage ?? 'Tạo lại báo cáo và gửi email khi PDF sẵn sàng'} type="button">
+          <button aria-label="Tạo lại báo cáo" className="table-retry-button report-generation-retry-button" data-tooltip={report.errorMessage ?? 'Tạo lại báo cáo và gửi email khi PDF sẵn sàng'} data-tooltip-wide disabled={isRetryingReport} onClick={() => void handleReportRetry()} type="button">
             <RotateCcw aria-hidden="true" size={15} />
             <span>{isRetryingReport ? 'Đang tạo...' : 'Tạo lại'}</span>
           </button>
         ) : null}
         {!status ? <span className="report-table-state report-table-state-error">Chưa tải được trạng thái PDF</span> : null}
-        {error ? <span className="report-table-error" title={error}><XCircle aria-hidden="true" size={14} /><span>Lỗi tải file</span></span> : null}
+        {error ? <span className="report-table-error" data-tooltip={error} data-tooltip-wide><XCircle aria-hidden="true" size={14} /><span>Lỗi tải file</span></span> : null}
       </div>
     )
   }
@@ -138,19 +138,19 @@ export function ReportDeliveryTableCell({
           className="table-upload-button"
           disabled={locked || isUploading}
           onClick={() => inputRef.current?.click()}
-          title="Tải file PDF lên"
+          data-tooltip="Tải file PDF lên"
           type="button"
         >
           <Upload aria-hidden="true" size={15} />
           <span>{isUploading ? 'Đang tải...' : 'Tải PDF lên'}</span>
         </button>
         {report.status === 'failed' ? (
-          <button aria-label="Tạo lại báo cáo" className="table-retry-button report-generation-retry-button" disabled={isRetryingReport} onClick={() => void handleReportRetry()} title={report.errorMessage ?? 'Tạo lại báo cáo và gửi email khi PDF sẵn sàng'} type="button">
+          <button aria-label="Tạo lại báo cáo" className="table-retry-button report-generation-retry-button" data-tooltip={report.errorMessage ?? 'Tạo lại báo cáo và gửi email khi PDF sẵn sàng'} data-tooltip-wide disabled={isRetryingReport} onClick={() => void handleReportRetry()} type="button">
             <RotateCcw aria-hidden="true" size={15} />
             <span>{isRetryingReport ? 'Đang tạo...' : 'Tạo lại'}</span>
           </button>
         ) : null}
-        {error ? <span className="report-table-error" title={error}><XCircle aria-hidden="true" size={14} /><span>Lỗi tải file</span></span> : null}
+        {error ? <span className="report-table-error" data-tooltip={error} data-tooltip-wide><XCircle aria-hidden="true" size={14} /><span>Lỗi tải file</span></span> : null}
       </div>
     )
   }
@@ -158,7 +158,7 @@ export function ReportDeliveryTableCell({
   return (
     <div className="report-table-file">
       <div className="report-table-file-copy">
-        <span className="report-table-file-name" title={file.fileName ?? 'File PDF'}>
+        <span className="report-table-file-name" data-tooltip={file.fileName ?? 'File PDF'}>
           <FileText aria-hidden="true" size={15} />
           <span>{file.fileName ?? 'bao-cao.pdf'}</span>
         </span>
@@ -166,7 +166,7 @@ export function ReportDeliveryTableCell({
       </div>
       <div className="report-table-file-actions">
         {file.downloadUrl ? (
-          <a className="table-download-button" download href={apiUrl(file.downloadUrl)} title="Tải file PDF">
+          <a aria-label="Tải file PDF" className="table-download-button" data-tooltip="Tải file PDF" download href={apiUrl(file.downloadUrl)}>
             <Download aria-hidden="true" size={15} />
             <span className="sr-only">Tải file PDF</span>
           </a>
@@ -177,26 +177,26 @@ export function ReportDeliveryTableCell({
           className="table-upload-button"
           disabled={locked || isUploading}
           onClick={() => inputRef.current?.click()}
-          title={locked ? 'File PDF đã khóa sau khi gửi email' : 'Thay file PDF'}
+          data-tooltip={locked ? 'File PDF đã khóa sau khi gửi email' : 'Thay file PDF'}
           type="button"
         >
           {locked ? <LockKeyhole aria-hidden="true" size={15} /> : <Upload aria-hidden="true" size={15} />}
           <span>{isUploading ? 'Đang tải...' : locked ? 'Đã khóa' : 'Thay file'}</span>
         </button>
       </div>
-      {error ? <span className="report-table-error" title={error}><XCircle aria-hidden="true" size={14} /><span>Lỗi tải file</span></span> : null}
+      {error ? <span className="report-table-error" data-tooltip={error} data-tooltip-wide><XCircle aria-hidden="true" size={14} /><span>Lỗi tải file</span></span> : null}
     </div>
   )
 }
 
 export function ReportDeliveryFileStatus({ report, status }: { report: ReportSummary; status: ReportDeliveryStatus | null }) {
   if (report.status === 'generating') return <span className="report-file-result report-file-result-progress report-generating">Đang tạo báo cáo</span>
-  if (report.status === 'failed') return <span className="report-file-result report-file-result-progress report-failed" title={report.errorMessage ?? 'Tạo báo cáo lỗi'}>Tạo báo cáo lỗi</span>
+  if (report.status === 'failed') return <span className="report-file-result report-file-result-progress report-failed" data-tooltip={report.errorMessage ?? 'Tạo báo cáo lỗi'} data-tooltip-wide>Tạo báo cáo lỗi</span>
   if (!status) return <span className="report-table-state report-table-state-error">Chưa tải được trạng thái PDF</span>
   if (!status.file.available) return <span className="report-file-result is-missing">Chưa có file PDF</span>
 
   return (
-    <span className="report-file-result" title={status.file.fileName ?? 'File PDF'}>
+    <span className="report-file-result" data-tooltip={status.file.fileName ?? 'File PDF'}>
       <FileText aria-hidden="true" size={15} />
       <span>{status.file.fileName ?? 'bao-cao.pdf'}</span>
     </span>

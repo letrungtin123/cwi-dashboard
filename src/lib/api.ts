@@ -129,6 +129,7 @@ function buildSubmissionQuery(filters: SubmissionFilters) {
   }
   if (filters.status) params.set('status', filters.status)
   if (filters.roundtable) params.set('roundtable', filters.roundtable)
+  if (filters.reportStatus) params.set('reportStatus', filters.reportStatus)
   if (filters.reportPdfUploaded !== undefined) params.set('reportPdfUploaded', String(filters.reportPdfUploaded))
   if (filters.emailStatus) params.set('emailStatus', filters.emailStatus)
   if (filters.search) params.set('search', filters.search)

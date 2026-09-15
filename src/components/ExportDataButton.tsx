@@ -85,7 +85,7 @@ export function ExportDataButton({ dataset, filters }: ExportDataButtonProps) {
 
   return (
     <div className="export-action">
-      <button aria-busy={isBusy} className="secondary-button export-button" disabled={isBusy} onClick={() => void handleExport()} type="button">
+      <button aria-busy={isBusy} className="secondary-button export-button" data-loading={isBusy} disabled={isBusy} onClick={() => void handleExport()} type="button">
         <Download aria-hidden="true" size={16} />
         <span>{isBusy ? statusText(activeJob) : 'Xuất dữ liệu'}</span>
       </button>

@@ -106,9 +106,9 @@ export function TablePagination({
         <button
           aria-label="Trang trước"
           className="pagination-arrow"
+          data-tooltip="Trang trước"
           disabled={isLoading || !hasPreviousPage}
           onClick={() => onPageChange(page - 1)}
-          title="Trang trước"
           type="button"
         >
           <ChevronLeft aria-hidden="true" size={17} />
@@ -117,9 +117,9 @@ export function TablePagination({
         <button
           aria-label="Trang sau"
           className="pagination-arrow"
+          data-tooltip="Trang sau"
           disabled={isLoading || !hasNextPage}
           onClick={() => onPageChange(page + 1)}
-          title="Trang sau"
           type="button"
         >
           <ChevronRight aria-hidden="true" size={17} />
