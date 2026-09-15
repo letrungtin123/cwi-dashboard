@@ -38,6 +38,7 @@ export type SubmissionListItem = {
   privacyConsent: PrivacyConsent
   report: ReportSummary
   roundtableRegistered: boolean
+  phone: string | null
   statusNote: string
   submittedAt: string
   submissionStatus: SubmissionStatus

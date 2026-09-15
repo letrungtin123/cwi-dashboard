@@ -12,6 +12,7 @@ import {
   Eye,
   FileText,
   Mail,
+  Phone,
   RefreshCw,
   Search,
   UsersRound,
@@ -330,6 +331,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
                   <div className="person-cell">
                     <strong>{item.fullName}</strong>
                     <span className="email-single-line-wrap" data-tooltip={item.email}><span className="email-single-line">{item.email}</span></span>
+                    <span>{item.phone ?? 'Chưa cung cấp số điện thoại'}</span>
                     <em>{item.position}</em>
                   </div>
                 </td>
@@ -387,6 +389,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
               <DeliveryStatusBadge status={deliveryStatuses[item.id] ?? null} />
             </div>
             <p className="email-single-line-wrap" data-tooltip={item.email}><span className="email-single-line">{item.email}</span></p>
+            <p>{item.phone ?? 'Chưa cung cấp số điện thoại'}</p>
             <ReportDownloadLink report={item.report} />
             <div className="submission-card-result">
               <span>Kết quả</span>
@@ -469,6 +472,10 @@ function SubmissionDetailDrawer({
               <div>
                 <Mail aria-hidden="true" size={16} />
                 <span className="email-single-line-wrap" data-tooltip={detail.email}><span className="email-single-line">{detail.email}</span></span>
+              </div>
+              <div>
+                <Phone aria-hidden="true" size={16} />
+                <span>{detail.phone ?? 'Chưa cung cấp số điện thoại'}</span>
               </div>
               <div>
                 <Briefcase aria-hidden="true" size={16} />
