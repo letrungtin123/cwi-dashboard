@@ -6,10 +6,14 @@ import { useAuth } from './features/auth/AuthProvider'
 import { LoginPage } from './features/auth/LoginPage'
 import { RoundtablePage } from './features/roundtable/RoundtablePage'
 import { SubmissionsPage } from './features/submissions/SubmissionsPage'
+import { WebinarPage } from './features/webinar/WebinarPage'
 
 const sectionCopy: Record<DashboardSection, { title: string }> = {
   roundtable: {
     title: 'Danh sách đăng ký Roundtable',
+  },
+  webinar: {
+    title: 'Danh sách đăng ký Webinar',
   },
   submissions: {
     title: 'Lượt gửi khảo sát',
@@ -53,7 +57,7 @@ export default function App() {
         title={currentCopy.title}
         user={user}
       >
-        {activeSection === 'roundtable' ? <RoundtablePage /> : <SubmissionsPage />}
+        {activeSection === 'roundtable' ? <RoundtablePage /> : activeSection === 'webinar' ? <WebinarPage /> : <SubmissionsPage />}
       </DashboardShell>
       <TooltipLayer />
     </>

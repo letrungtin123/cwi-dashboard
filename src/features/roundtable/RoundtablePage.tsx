@@ -16,7 +16,15 @@ import {
   UsersRound,
   X,
 } from 'lucide-react'
-import { apiUrl, getRoundtableRegistrationDetail, getRoundtableRegistrationStats, listRoundtableRegistrationsPage } from '@/lib/api'
+import {
+  apiUrl,
+  getRoundtableRegistrationDetail,
+  getRoundtableRegistrationStats,
+  getWebinarRegistrationDetail,
+  getWebinarRegistrationStats,
+  listRoundtableRegistrationsPage,
+  listWebinarRegistrationsPage,
+} from '@/lib/api'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { ExportDataButton } from '@/components/ExportDataButton'
 import { formatDateTime, formatNumber, valueToText } from '@/lib/format'
@@ -35,6 +43,12 @@ import type {
 
 type LinkFilter = 'all' | RoundtableLinkStatus
 type SelectOption<T extends string> = { description?: string; label: string; value: T }
+export type EventRegistrationKind = 'roundtable' | 'webinar'
+
+const eventCopy: Record<EventRegistrationKind, { eventName: string; eventTitle: string }> = {
+  roundtable: { eventName: 'Roundtable', eventTitle: 'CEO Roundtable' },
+  webinar: { eventName: 'Webinar', eventTitle: 'Webinar' },
+}
 
 const defaultPageSize = 10
 // The API owns the sort key and signs the cursor so new registrations cannot
@@ -63,11 +77,13 @@ const privacyLabels: Record<PrivacyConsent, string> = {
   yes: 'Đồng ý',
 }
 
-const linkOptions: Array<SelectOption<LinkFilter>> = [
-  { description: 'Hiển thị toàn bộ đăng ký', label: 'Tất cả đăng ký', value: 'all' },
-  { description: 'Đăng ký đã có lượt gửi khảo sát', label: 'Đã khảo sát', value: 'linked' },
-  { description: 'Đăng ký Roundtable độc lập, chưa có lượt gửi khảo sát', label: 'Đăng ký riêng', value: 'standalone' },
-]
+function getLinkOptions(eventName: string): Array<SelectOption<LinkFilter>> {
+  return [
+    { description: 'Hiển thị toàn bộ đăng ký', label: 'Tất cả đăng ký', value: 'all' },
+    { description: 'Đăng ký đã có lượt gửi khảo sát', label: 'Đã khảo sát', value: 'linked' },
+    { description: `Đăng ký ${eventName} độc lập, chưa có lượt gửi khảo sát`, label: 'Đăng ký riêng', value: 'standalone' },
+  ]
+}
 
 function buildFilters(search: string, linkStatus: LinkFilter, limit: number, cursor: PageCursor): RoundtableRegistrationFilters {
   return {
@@ -210,9 +226,9 @@ function SkeletonLine({ className = '' }: { className?: string }) {
   )
 }
 
-function StatsSkeleton() {
+function StatsSkeleton({ eventName }: { eventName: string }) {
   return (
-    <section className="stats-grid" aria-label="Đang tải thống kê Roundtable">
+    <section className="stats-grid" aria-label={`Đang tải thống kê ${eventName}`}>
       {Array.from({ length: 4 }, (_, index) => (
         <article className="stat-tile skeleton-tile" key={index}>
           <SkeletonLine className="skeleton-icon" />
@@ -226,10 +242,10 @@ function StatsSkeleton() {
   )
 }
 
-function TableSkeleton() {
+function TableSkeleton({ eventName }: { eventName: string }) {
   return (
-    <div className="table-loading" role="status" aria-label="Đang tải danh sách Roundtable">
-      <span className="sr-only">Đang tải danh sách Roundtable</span>
+    <div className="table-loading" role="status" aria-label={`Đang tải danh sách ${eventName}`}>
+      <span className="sr-only">Đang tải danh sách {eventName}</span>
       <div className="table-skeleton desktop-table">
         {Array.from({ length: 7 }, (_, index) => (
           <div className="table-skeleton-row roundtable-skeleton-row" key={index}>
@@ -254,9 +270,9 @@ function TableSkeleton() {
   )
 }
 
-function DrawerSkeleton() {
+function DrawerSkeleton({ eventName }: { eventName: string }) {
   return (
-    <div className="drawer-content drawer-skeleton" role="status" aria-label="Đang tải chi tiết Roundtable">
+    <div className="drawer-content drawer-skeleton" role="status" aria-label={`Đang tải chi tiết ${eventName}`}>
       <SkeletonLine className="skeleton-drawer-title" />
       <SkeletonLine className="skeleton-drawer-line" />
       <SkeletonLine className="skeleton-drawer-line short" />
@@ -270,11 +286,11 @@ function DrawerSkeleton() {
   )
 }
 
-function EmptyState({ error, onRetry }: { error: string; onRetry: () => void }) {
+function EmptyState({ error, eventName, onRetry }: { error: string; eventName: string; onRetry: () => void }) {
   return (
     <div className="empty-state">
       <CircleAlert aria-hidden="true" size={30} />
-      <h2>{error ? 'Không tải được dữ liệu' : 'Chưa có đăng ký Roundtable'}</h2>
+      <h2>{error ? 'Không tải được dữ liệu' : `Chưa có đăng ký ${eventName}`}</h2>
       <p>{error || 'Chưa có dữ liệu phù hợp với bộ lọc hiện tại.'}</p>
       {error ? (
         <button className="secondary-button" onClick={onRetry} type="button">
@@ -388,6 +404,7 @@ function ClientMetaList({ value }: { value: Record<string, unknown> }) {
 
 function RoundtableDetailDrawer({
   detail,
+  eventName,
   error,
   isLoading,
   onClose,
@@ -395,22 +412,23 @@ function RoundtableDetailDrawer({
   open,
 }: {
   detail: RoundtableRegistrationDetail | null
+  eventName: string
   error: string
   isLoading: boolean
   onClose: () => void
   onRetry: () => void
   open: boolean
 }) {
-  const title = detail?.fullName || (isLoading ? 'Đang tải' : 'Chi tiết Roundtable')
+  const title = detail?.fullName || (isLoading ? 'Đang tải' : `Chi tiết ${eventName}`)
   const linkedSubmission = detail?.linkedSubmission ?? null
 
   return (
     <>
-      <button aria-label="Đóng chi tiết Roundtable" className="drawer-backdrop" data-open={open} onClick={onClose} type="button" />
-      <aside className="detail-drawer" data-open={open} aria-label="Chi tiết đăng ký Roundtable">
+      <button aria-label={`Đóng chi tiết ${eventName}`} className="drawer-backdrop" data-open={open} onClick={onClose} type="button" />
+      <aside className="detail-drawer" data-open={open} aria-label={`Chi tiết đăng ký ${eventName}`}>
         <div className="drawer-header">
           <div>
-            <p>Chi tiết Roundtable</p>
+            <p>Chi tiết {eventName}</p>
             <h2>{title}</h2>
           </div>
           <button aria-label="Đóng" className="icon-button" data-tooltip="Đóng" onClick={onClose} type="button">
@@ -418,7 +436,7 @@ function RoundtableDetailDrawer({
           </button>
         </div>
 
-        {isLoading ? <DrawerSkeleton /> : null}
+        {isLoading ? <DrawerSkeleton eventName={eventName} /> : null}
 
         {error && !isLoading ? (
           <div className="drawer-content">
@@ -500,7 +518,7 @@ function RoundtableDetailDrawer({
             ) : (
               <section className="detail-section">
                 <h3>Trạng thái survey</h3>
-                <p>Người này mới đăng ký CEO Roundtable, chưa có lượt gửi khảo sát được liên kết.</p>
+                <p>Người này mới đăng ký {eventName}, chưa có lượt gửi khảo sát được liên kết.</p>
               </section>
             )}
 
@@ -508,7 +526,7 @@ function RoundtableDetailDrawer({
               <h3>Thông tin kỹ thuật</h3>
               <dl className="meta-list">
                 <div>
-                  <dt>Roundtable ID</dt>
+                  <dt>{eventName} ID</dt>
                   <dd>{detail.id}</dd>
                 </div>
                 <div>
@@ -533,8 +551,24 @@ function RoundtableDetailDrawer({
   )
 }
 
-export function RoundtablePage() {
+export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind }) {
   const { user } = useAuth()
+  const { eventName, eventTitle } = eventCopy[kind]
+  const registrationApi = useMemo(
+    () => kind === 'roundtable'
+      ? {
+          getDetail: getRoundtableRegistrationDetail,
+          getStats: getRoundtableRegistrationStats,
+          listPage: listRoundtableRegistrationsPage,
+        }
+      : {
+          getDetail: getWebinarRegistrationDetail,
+          getStats: getWebinarRegistrationStats,
+          listPage: listWebinarRegistrationsPage,
+        },
+    [kind],
+  )
+  const linkOptions = useMemo(() => getLinkOptions(eventName), [eventName])
   const [draftSearch, setDraftSearch] = useState('')
   const [search, setSearch] = useState('')
   const [linkStatus, setLinkStatus] = useState<LinkFilter>('all')
@@ -570,19 +604,19 @@ export function RoundtablePage() {
 
   const loadStats = useCallback(async () => {
     try {
-      setStats(await getRoundtableRegistrationStats())
+      setStats(await registrationApi.getStats())
     } catch (caught) {
-      const message = caught instanceof Error ? caught.message : 'Không tải được thống kê Roundtable.'
+      const message = caught instanceof Error ? caught.message : `Không tải được thống kê ${eventName}.`
       setError(message)
     }
-  }, [])
+  }, [eventName, registrationApi])
 
   const loadPage = useCallback(async () => {
     setIsLoading(true)
     setError('')
 
     try {
-      const response = await listRoundtableRegistrationsPage(filters)
+      const response = await registrationApi.listPage(filters)
       setItems(response.items)
       setHasNextPage(response.hasNextPage)
 
@@ -594,12 +628,12 @@ export function RoundtablePage() {
         return next
       })
     } catch (caught) {
-      const message = caught instanceof Error ? caught.message : 'Không tải được dữ liệu Roundtable.'
+      const message = caught instanceof Error ? caught.message : `Không tải được dữ liệu ${eventName}.`
       setError(message)
     } finally {
       setIsLoading(false)
     }
-  }, [filters, page])
+  }, [eventName, filters, page, registrationApi])
 
   useEffect(() => {
     void loadStats()
@@ -623,16 +657,16 @@ export function RoundtablePage() {
     setDetailError('')
     setDetailLoading(true)
 
-    getRoundtableRegistrationDetail(selectedId)
+    registrationApi.getDetail(selectedId)
       .then((nextDetail) => {
         if (active) setDetail(nextDetail)
       })
       .catch((caught) => {
         if (!active) return
 
-        const message = caught instanceof Error ? caught.message : 'Không tải được chi tiết Roundtable.'
+        const message = caught instanceof Error ? caught.message : `Không tải được chi tiết ${eventName}.`
         setDetail(null)
-        setDetailError(message || 'Không tải được chi tiết Roundtable.')
+        setDetailError(message || `Không tải được chi tiết ${eventName}.`)
       })
       .finally(() => {
         if (active) setDetailLoading(false)
@@ -641,18 +675,18 @@ export function RoundtablePage() {
     return () => {
       active = false
     }
-  }, [detailReloadKey, selectedId])
+  }, [detailReloadKey, eventName, registrationApi, selectedId])
 
   return (
     <main className="dashboard-main">
       {isLoading && !stats ? (
-        <StatsSkeleton />
+        <StatsSkeleton eventName={eventName} />
       ) : (
-        <section className="stats-grid" aria-label="Thống kê Roundtable">
-          <StatTile icon={<UsersRound aria-hidden="true" size={20} />} label="Tổng đăng ký" tooltip="Tổng số lượt đăng ký CEO Roundtable đã được ghi nhận, gồm cả đăng ký riêng và đăng ký đã khảo sát." value={formatNumber(stats?.totalRegistrations ?? 0)} />
-          <StatTile icon={<Link2 aria-hidden="true" size={20} />} label="Đã khảo sát" tooltip="Đăng ký Roundtable đã có lượt gửi khảo sát trong hệ thống." value={formatNumber(stats?.linkedSubmissions ?? 0)} />
-          <StatTile icon={<UserCheck aria-hidden="true" size={20} />} label="Đăng ký riêng" tooltip="Người dùng đã đăng ký Roundtable nhưng chưa gửi khảo sát." value={formatNumber(stats?.standaloneRegistrations ?? 0)} />
-          <StatTile icon={<CalendarDays aria-hidden="true" size={20} />} label="Hôm nay" tooltip="Số đăng ký Roundtable được tạo từ đầu ngày hiện tại theo thời gian database." value={formatNumber(stats?.todayRegistrations ?? 0)} />
+        <section className="stats-grid" aria-label={`Thống kê ${eventName}`}>
+          <StatTile icon={<UsersRound aria-hidden="true" size={20} />} label="Tổng đăng ký" tooltip={`Tổng số lượt đăng ký ${eventTitle} đã được ghi nhận, gồm cả đăng ký riêng và đăng ký đã khảo sát.`} value={formatNumber(stats?.totalRegistrations ?? 0)} />
+          <StatTile icon={<Link2 aria-hidden="true" size={20} />} label="Đã khảo sát" tooltip={`Đăng ký ${eventName} đã có lượt gửi khảo sát trong hệ thống.`} value={formatNumber(stats?.linkedSubmissions ?? 0)} />
+          <StatTile icon={<UserCheck aria-hidden="true" size={20} />} label="Đăng ký riêng" tooltip={`Người dùng đã đăng ký ${eventName} nhưng chưa gửi khảo sát.`} value={formatNumber(stats?.standaloneRegistrations ?? 0)} />
+          <StatTile icon={<CalendarDays aria-hidden="true" size={20} />} label="Hôm nay" tooltip={`Số đăng ký ${eventName} được tạo từ đầu ngày hiện tại theo thời gian database.`} value={formatNumber(stats?.todayRegistrations ?? 0)} />
         </section>
       )}
 
@@ -660,10 +694,10 @@ export function RoundtablePage() {
         <div className="surface-head">
           <div>
             <p>Danh sách</p>
-            <h2>Đăng ký CEO Roundtable</h2>
+            <h2>Đăng ký {eventTitle}</h2>
           </div>
           <div className="surface-actions">
-            {user?.role === 'admin' ? <ExportDataButton dataset="roundtable" filters={exportFilters} /> : null}
+            {user?.role === 'admin' ? <ExportDataButton dataset={kind} filters={exportFilters} /> : null}
             <button className="secondary-button" onClick={() => { setPage(1); setPageCursors([null]); void loadStats(); if (page === 1) void loadPage() }} type="button">
               <RefreshCw aria-hidden="true" size={16} />
               <span>Tải lại</span>
@@ -675,7 +709,7 @@ export function RoundtablePage() {
           <div className="search-box">
             <Search aria-hidden="true" size={18} />
             <input
-              aria-label="Tìm kiếm đăng ký Roundtable"
+              aria-label={`Tìm kiếm đăng ký ${eventName}`}
               onChange={(event) => setDraftSearch(event.target.value)}
               placeholder="Tìm tên, email, chức vụ"
               type="search"
@@ -685,8 +719,8 @@ export function RoundtablePage() {
           <CustomSelect label="Liên kết" onChange={(next) => { setLinkStatus(next); setPage(1); setPageCursors([null]) }} options={linkOptions} value={linkStatus} />
         </div>
 
-        {isLoading ? <TableSkeleton /> : null}
-        {!isLoading && (error || items.length === 0) ? <EmptyState error={error} onRetry={() => void loadPage()} /> : null}
+        {isLoading ? <TableSkeleton eventName={eventName} /> : null}
+        {!isLoading && (error || items.length === 0) ? <EmptyState error={error} eventName={eventName} onRetry={() => void loadPage()} /> : null}
         {!isLoading && !error && items.length > 0 ? <RoundtableTable items={items} onSelect={setSelectedId} /> : null}
 
         {!isLoading && !error && items.length > 0 ? (
@@ -710,6 +744,7 @@ export function RoundtablePage() {
       <RoundtableDetailDrawer
         detail={detail}
         error={detailError}
+        eventName={eventName}
         isLoading={detailLoading}
         onClose={() => setSelectedId('')}
         onRetry={() => setDetailReloadKey((current) => current + 1)}
@@ -717,4 +752,8 @@ export function RoundtablePage() {
       />
     </main>
   )
+}
+
+export function RoundtablePage() {
+  return <EventRegistrationPage kind="roundtable" />
 }

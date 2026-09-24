@@ -5,6 +5,10 @@ import type {
   RoundtableRegistrationFilters,
   RoundtableRegistrationListItem,
   RoundtableRegistrationStats,
+  WebinarRegistrationDetail,
+  WebinarRegistrationFilters,
+  WebinarRegistrationListItem,
+  WebinarRegistrationStats,
   SubmissionDetail,
   SubmissionFilters,
   SubmissionListItem,
@@ -182,6 +186,22 @@ export function getRoundtableRegistrationStats() {
 
 export function getRoundtableRegistrationDetail(id: string) {
   return request<RoundtableRegistrationDetail>(`/api/v1/admin/roundtable-registrations/${id}`)
+}
+
+export function listWebinarRegistrationsPage(filters: WebinarRegistrationFilters = {}) {
+  return request<CursorPage<WebinarRegistrationListItem>>('/api/v1/admin/webinar-registrations/page?' + buildRoundtableQuery(filters))
+}
+
+export function listWebinarRegistrations(filters: WebinarRegistrationFilters = {}) {
+  return request<WebinarRegistrationListItem[]>(`/api/v1/admin/webinar-registrations?${buildRoundtableQuery(filters)}`)
+}
+
+export function getWebinarRegistrationStats() {
+  return request<WebinarRegistrationStats>('/api/v1/admin/webinar-registrations/stats')
+}
+
+export function getWebinarRegistrationDetail(id: string) {
+  return request<WebinarRegistrationDetail>(`/api/v1/admin/webinar-registrations/${id}`)
 }
 
 

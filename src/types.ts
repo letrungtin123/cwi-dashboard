@@ -139,8 +139,14 @@ export type RoundtableRegistrationFilters = {
   search?: string
 }
 
+export type WebinarLinkStatus = RoundtableLinkStatus
+export type WebinarSubmissionSummary = RoundtableSubmissionSummary
+export type WebinarRegistrationListItem = RoundtableRegistrationListItem
+export type WebinarRegistrationDetail = RoundtableRegistrationDetail
+export type WebinarRegistrationStats = RoundtableRegistrationStats
+export type WebinarRegistrationFilters = RoundtableRegistrationFilters
 
-export type ExportDataset = 'submissions' | 'roundtable'
+export type ExportDataset = 'submissions' | 'roundtable' | 'webinar'
 
 export type ExportFilters = {
   linkStatus?: 'linked' | 'standalone'
