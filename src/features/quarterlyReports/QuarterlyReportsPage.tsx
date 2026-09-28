@@ -1,5 +1,6 @@
-import { CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Copy, FileText, FileUp, LoaderCircle, RefreshCw, UploadCloud, X } from 'lucide-react'
+import { CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Copy, FileText, FileUp, LoaderCircle, QrCode, RefreshCw, UploadCloud, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import QRCode from 'qrcode'
 import { ApiError, listQuarterlyReports, uploadQuarterlyReport } from '@/lib/api'
 import { formatDateTime } from '@/lib/format'
 import type { QuarterlyReportAdmin } from '@/types'
@@ -26,6 +27,7 @@ export function QuarterlyReportsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDraggingFile, setIsDraggingFile] = useState(false)
+  const [qrGeneratingSlug, setQrGeneratingSlug] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
@@ -98,6 +100,32 @@ export function QuarterlyReportsPage() {
     }
   }
 
+  const downloadPublicUrlQr = async (slug: string) => {
+    if (qrGeneratingSlug) return
+
+    setQrGeneratingSlug(slug)
+    setError('')
+    try {
+      const dataUrl = await QRCode.toDataURL(publicCampaignUrl(slug), {
+        color: { dark: '#003d7c', light: '#ffffffff' },
+        errorCorrectionLevel: 'M',
+        margin: 2,
+        width: 1024,
+      })
+      const anchor = document.createElement('a')
+      anchor.download = `ma-qr-bao-cao-${slug}.png`
+      anchor.href = dataUrl
+      document.body.append(anchor)
+      anchor.click()
+      anchor.remove()
+      setNotice('Đã tạo mã QR cho URL báo cáo.')
+    } catch {
+      setError('Không thể tạo mã QR cho URL báo cáo.')
+    } finally {
+      setQrGeneratingSlug(null)
+    }
+  }
+
   return (
     <main className="dashboard-main quarterly-report-manager">
       <section className="content-surface quarterly-report-upload" data-loading={isSubmitting}>
@@ -143,7 +171,7 @@ export function QuarterlyReportsPage() {
 
       <section className="content-surface">
         <div className="surface-head"><div><p className="surface-kicker">LỊCH SỬ</p><h2>Báo cáo đã tải lên</h2><p>{isLoading ? 'Đang tải danh sách...' : `${reports.length} báo cáo được lưu riêng tư.`}</p></div></div>
-        <div className="table-scroll"><table className="quarterly-report-table"><thead><tr><th>Kỳ báo cáo</th><th>Trạng thái</th><th>File</th><th>Tải lên</th><th>URL quảng cáo</th></tr></thead><tbody>{reports.map((report) => <tr key={report.id}><td><strong>Quý {report.periodQuarter}/{report.periodYear}</strong><span>{report.title}</span></td><td><span className={report.isActive ? 'quarterly-report-status is-active' : 'quarterly-report-status'}>{report.isActive ? 'Đang hiển thị' : 'Lịch sử'}</span></td><td className="quarterly-report-file-cell"><div className="quarterly-report-file-entry"><span aria-hidden="true" className="quarterly-report-file-entry-icon"><FileText size={18} /></span><div><strong aria-label={`Tên file: ${report.fileName}`}>{report.fileName}</strong><small>PDF · {formatFileSize(report.fileSize)}</small></div></div></td><td>{formatDateTime(report.uploadedAt)}</td><td><button aria-label={`Sao chép URL ${report.slug}`} className="mini-link-button" data-tooltip="Sao chép URL quảng cáo" onClick={() => void copyPublicUrl(report.slug)} type="button"><Copy aria-hidden="true" size={15} /><span>Sao chép URL</span></button></td></tr>)}{!isLoading && !reports.length ? <tr><td className="quarterly-report-empty" colSpan={5}>Chưa có báo cáo quý nào.</td></tr> : null}</tbody></table></div>
+        <div className="table-scroll"><table className="quarterly-report-table"><thead><tr><th>Kỳ báo cáo</th><th>Trạng thái</th><th>File</th><th>Tải lên</th><th>URL quảng cáo</th></tr></thead><tbody>{reports.map((report) => <tr key={report.id}><td><strong>Quý {report.periodQuarter}/{report.periodYear}</strong><span>{report.title}</span></td><td><span className={report.isActive ? 'quarterly-report-status is-active' : 'quarterly-report-status'}>{report.isActive ? 'Đang hiển thị' : 'Lịch sử'}</span></td><td className="quarterly-report-file-cell"><div className="quarterly-report-file-entry"><span aria-hidden="true" className="quarterly-report-file-entry-icon"><FileText size={18} /></span><div><strong aria-label={`Tên file: ${report.fileName}`}>{report.fileName}</strong><small>PDF · {formatFileSize(report.fileSize)}</small></div></div></td><td>{formatDateTime(report.uploadedAt)}</td><td><div className="quarterly-report-url-actions"><button aria-label={`Sao chép URL ${report.slug}`} className="mini-link-button" data-tooltip="Sao chép URL quảng cáo" onClick={() => void copyPublicUrl(report.slug)} type="button"><Copy aria-hidden="true" size={15} /><span>Sao chép URL</span></button><button aria-label={`Tải mã QR cho ${report.slug}`} className="mini-link-button quarterly-report-download-qr" data-tooltip="Tải mã QR" disabled={qrGeneratingSlug === report.slug} onClick={() => void downloadPublicUrlQr(report.slug)} type="button">{qrGeneratingSlug === report.slug ? <LoaderCircle aria-hidden="true" className="spinning-icon" size={15} /> : <QrCode aria-hidden="true" size={15} />}<span>{qrGeneratingSlug === report.slug ? 'Đang tạo...' : 'Tải mã QR'}</span></button></div></td></tr>)}{!isLoading && !reports.length ? <tr><td className="quarterly-report-empty" colSpan={5}>Chưa có báo cáo quý nào.</td></tr> : null}</tbody></table></div>
       </section>
     </main>
   )

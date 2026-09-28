@@ -4226,6 +4226,19 @@ tbody tr:hover {
   text-decoration: underline;
 }
 
+.quarterly-report-url-actions {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.quarterly-report-download-qr:disabled {
+  cursor: wait;
+  opacity: 0.62;
+  text-decoration: none;
+}
+
 .quarterly-report-empty {
   color: var(--muted);
   padding: 28px !important;
