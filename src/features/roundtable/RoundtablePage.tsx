@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import QRCode from 'qrcode'
 import {
   Briefcase,
   CalendarDays,
@@ -13,6 +14,7 @@ import {
   Link2,
   Mail,
   RefreshCw,
+  QrCode,
   Search,
   UserCheck,
   UsersRound,
@@ -137,7 +139,8 @@ function getPublicRegistrationUrl(kind: EventRegistrationKind) {
 
 function PublicRegistrationLink({ eventName, kind }: { eventName: string; kind: EventRegistrationKind }) {
   const url = useMemo(() => getPublicRegistrationUrl(kind), [kind])
-  const [copyStatus, setCopyStatus] = useState('')
+  const [actionStatus, setActionStatus] = useState('')
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false)
 
   const copyUrl = async () => {
     try {
@@ -153,9 +156,32 @@ function PublicRegistrationLink({ eventName, kind }: { eventName: string; kind: 
         textArea.remove()
         if (!copied) throw new Error('copy_failed')
       }
-      setCopyStatus('Đã sao chép link đăng ký.')
+      setActionStatus('Đã sao chép link đăng ký.')
     } catch {
-      setCopyStatus('Không thể sao chép link trên trình duyệt này.')
+      setActionStatus('Không thể sao chép link trên trình duyệt này.')
+    }
+  }
+
+  const downloadQr = async () => {
+    setIsGeneratingQr(true)
+    try {
+      const dataUrl = await QRCode.toDataURL(url, {
+        color: { dark: '#003d7c', light: '#ffffffff' },
+        errorCorrectionLevel: 'M',
+        margin: 2,
+        width: 1024,
+      })
+      const anchor = document.createElement('a')
+      anchor.download = `ma-qr-dang-ky-${kind}.png`
+      anchor.href = dataUrl
+      document.body.append(anchor)
+      anchor.click()
+      anchor.remove()
+      setActionStatus('Đã tải mã QR.')
+    } catch {
+      setActionStatus('Không thể tạo mã QR. Vui lòng thử lại.')
+    } finally {
+      setIsGeneratingQr(false)
     }
   }
 
@@ -173,11 +199,15 @@ function PublicRegistrationLink({ eventName, kind }: { eventName: string; kind: 
           <ExternalLink aria-hidden="true" size={16} />
           <span>Mở form</span>
         </a>
+        <button className="secondary-button event-registration-download-qr" disabled={isGeneratingQr} onClick={() => void downloadQr()} type="button">
+          <QrCode aria-hidden="true" size={17} />
+          <span>{isGeneratingQr ? 'Đang tạo...' : 'Tải mã QR'}</span>
+        </button>
         <button aria-label={`Sao chép link đăng ký ${eventName}`} className="event-registration-copy-link" data-tooltip="Sao chép link" onClick={() => void copyUrl()} type="button">
           <Copy aria-hidden="true" size={17} />
         </button>
       </div>
-      {copyStatus ? <p aria-live="polite" className="event-registration-copy-status">{copyStatus}</p> : null}
+      {actionStatus ? <p aria-live="polite" className="event-registration-copy-status">{actionStatus}</p> : null}
     </div>
   )
 }
