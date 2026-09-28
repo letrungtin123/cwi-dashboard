@@ -7,6 +7,8 @@ import {
   ChevronDown,
   ChevronRight,
   CircleAlert,
+  Copy,
+  ExternalLink,
   FileText,
   Link2,
   Mail,
@@ -124,6 +126,59 @@ function ReportDownloadLink({ report }: { report: ReportSummary }) {
       <FileText aria-hidden="true" size={15} />
       <span>Tải PDF</span>
     </a>
+  )
+}
+
+function getPublicRegistrationUrl(kind: EventRegistrationKind) {
+  const configuredOrigin = import.meta.env.VITE_LANDING_BASE_URL?.trim().replace(/\/+$/, '')
+  const landingOrigin = configuredOrigin || (import.meta.env.DEV ? 'http://localhost:5670' : window.location.origin)
+  return `${landingOrigin}/?register=${kind}`
+}
+
+function PublicRegistrationLink({ eventName, kind }: { eventName: string; kind: EventRegistrationKind }) {
+  const url = useMemo(() => getPublicRegistrationUrl(kind), [kind])
+  const [copyStatus, setCopyStatus] = useState('')
+
+  const copyUrl = async () => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url)
+      } else {
+        const textArea = document.createElement('textarea')
+        textArea.value = url
+        textArea.style.cssText = 'left:-9999px;position:fixed;top:0'
+        document.body.append(textArea)
+        textArea.select()
+        const copied = document.execCommand('copy')
+        textArea.remove()
+        if (!copied) throw new Error('copy_failed')
+      }
+      setCopyStatus('Đã sao chép link đăng ký.')
+    } catch {
+      setCopyStatus('Không thể sao chép link trên trình duyệt này.')
+    }
+  }
+
+  return (
+    <div className="event-registration-link-bar">
+      <div className="event-registration-link-copy">
+        <span className="event-registration-link-icon"><Link2 aria-hidden="true" size={18} /></span>
+        <div>
+          <strong>Link đăng ký {eventName}</strong>
+          <a className="event-registration-link-url" href={url}>{url}</a>
+        </div>
+      </div>
+      <div className="event-registration-link-actions">
+        <a className="secondary-button event-registration-open-link" href={url}>
+          <ExternalLink aria-hidden="true" size={16} />
+          <span>Mở form</span>
+        </a>
+        <button aria-label={`Sao chép link đăng ký ${eventName}`} className="event-registration-copy-link" data-tooltip="Sao chép link" onClick={() => void copyUrl()} type="button">
+          <Copy aria-hidden="true" size={17} />
+        </button>
+      </div>
+      {copyStatus ? <p aria-live="polite" className="event-registration-copy-status">{copyStatus}</p> : null}
+    </div>
   )
 }
 
@@ -704,6 +759,8 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
             </button>
           </div>
         </div>
+
+        <PublicRegistrationLink eventName={eventName} kind={kind} />
 
         <div className="filter-bar roundtable-filter-bar">
           <div className="search-box">

@@ -146,6 +146,45 @@ export type WebinarRegistrationDetail = RoundtableRegistrationDetail
 export type WebinarRegistrationStats = RoundtableRegistrationStats
 export type WebinarRegistrationFilters = RoundtableRegistrationFilters
 
+export type QuarterlyReportAdmin = {
+  fileName: string
+  fileSize: number
+  id: string
+  isActive: boolean
+  periodQuarter: number
+  periodYear: number
+  slug: string
+  subtitle: string
+  title: string
+  uploadedAt: string
+  uploadedBy: string
+}
+
+export type QuarterlyReportDownloadListItem = {
+  downloadCount: number
+  email: string
+  fullName: string
+  id: string
+  lastDownloadedAt: string | null
+  phone: string
+  position: string
+  reportPeriod: string
+  reportSlug: string
+  requestedAt: string
+}
+
+export type QuarterlyReportDownloadStats = {
+  downloadedCount: number
+  todayRequests: number
+  totalRequests: number
+}
+
+export type QuarterlyReportDownloadFilters = {
+  cursor?: string
+  limit?: number
+  search?: string
+}
+
 export type ExportDataset = 'submissions' | 'roundtable' | 'webinar'
 
 export type ExportFilters = {

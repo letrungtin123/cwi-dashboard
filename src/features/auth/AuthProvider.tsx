@@ -1,12 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { getCurrentSession, login as loginRequest, logout as logoutRequest } from '@/lib/api'
+import { ApiError, getCurrentSession, login as loginRequest, logout as logoutRequest } from '@/lib/api'
 import type { AdminUser } from '@/types'
 
-type AuthStatus = 'authenticated' | 'checking' | 'guest'
+type AuthStatus = 'authenticated' | 'checking' | 'guest' | 'unavailable'
 
 type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  retrySession: () => Promise<void>
   status: AuthStatus
   user: AdminUser | null
 }
@@ -22,9 +23,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const session = await getCurrentSession()
       setUser(session.user)
       setStatus('authenticated')
-    } catch {
+    } catch (error) {
       setUser(null)
-      setStatus('guest')
+      setStatus(error instanceof ApiError && (error.status === 401 || error.status === 403) ? 'guest' : 'unavailable')
     }
   }, [])
 
@@ -51,10 +52,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       login,
       logout,
+      retrySession: refresh,
       status,
       user,
     }),
-    [login, logout, status, user],
+    [login, logout, refresh, status, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from 'react'
-import { BarChart3, ChevronsLeft, ChevronsRight, LogOut, Menu, UsersRound, Video, X } from 'lucide-react'
+import { BarChart3, ChevronsLeft, ChevronsRight, Download, FileStack, LogOut, Menu, UsersRound, Video, X } from 'lucide-react'
 import logoSrc from '@/assets/cwi-logo.svg'
 import type { AdminUser } from '@/types'
 
-export type DashboardSection = 'submissions' | 'roundtable' | 'webinar'
+export type DashboardSection = 'submissions' | 'roundtable' | 'webinar' | 'quarterlyReports' | 'quarterlyReportDownloads'
 
 type DashboardShellProps = {
   activeSection: DashboardSection
@@ -18,6 +18,8 @@ const navItems: Array<{ icon: ReactNode; label: string; section: DashboardSectio
   { icon: <BarChart3 aria-hidden="true" size={18} />, label: 'Tổng quan khảo sát', section: 'submissions' },
   { icon: <UsersRound aria-hidden="true" size={18} />, label: 'Danh sách Roundtable', section: 'roundtable' },
   { icon: <Video aria-hidden="true" size={18} />, label: 'Danh sách Webinar', section: 'webinar' },
+  { icon: <FileStack aria-hidden="true" size={18} />, label: 'Quản lý báo cáo quý', section: 'quarterlyReports' },
+  { icon: <Download aria-hidden="true" size={18} />, label: 'Danh sách tải báo cáo quý', section: 'quarterlyReportDownloads' },
 ]
 
 export function DashboardShell({ activeSection, children, onLogout, onSectionChange, title, user }: DashboardShellProps) {

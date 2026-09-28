@@ -9,6 +9,10 @@ import type {
   WebinarRegistrationFilters,
   WebinarRegistrationListItem,
   WebinarRegistrationStats,
+  QuarterlyReportAdmin,
+  QuarterlyReportDownloadFilters,
+  QuarterlyReportDownloadListItem,
+  QuarterlyReportDownloadStats,
   SubmissionDetail,
   SubmissionFilters,
   SubmissionListItem,
@@ -202,6 +206,49 @@ export function getWebinarRegistrationStats() {
 
 export function getWebinarRegistrationDetail(id: string) {
   return request<WebinarRegistrationDetail>(`/api/v1/admin/webinar-registrations/${id}`)
+}
+
+export function listQuarterlyReports() {
+  return request<QuarterlyReportAdmin[]>('/api/v1/admin/quarterly-reports/reports')
+}
+
+export async function uploadQuarterlyReport(input: { activate: boolean; file: File; periodQuarter: number; periodYear: number; subtitle: string; title: string }) {
+  const formData = new FormData()
+  formData.append('file', input.file, input.file.name)
+  formData.append('periodYear', String(input.periodYear))
+  formData.append('periodQuarter', String(input.periodQuarter))
+  formData.append('title', input.title)
+  formData.append('subtitle', input.subtitle)
+  formData.append('activate', String(input.activate))
+  const response = await fetch(apiUrl('/api/v1/admin/quarterly-reports/reports'), {
+    body: formData,
+    credentials: 'include',
+    headers: { 'x-csrf-token': getCsrfToken() },
+    method: 'POST',
+  })
+  const payload = (await response.json().catch(() => null)) as ApiEnvelope<QuarterlyReportAdmin> | { error?: { code?: string; message?: string } } | null
+  if (!response.ok) {
+    const error = payload && 'error' in payload ? payload.error : undefined
+    throw new ApiError(response.status, error?.code ?? 'quarterly_report_upload_failed', error?.message ?? 'Không thể tải báo cáo quý lên.')
+  }
+  if (!payload || !('data' in payload)) throw new ApiError(response.status, 'invalid_response', 'Phản hồi từ hệ thống không hợp lệ.')
+  return payload.data
+}
+
+function buildQuarterlyReportDownloadQuery(filters: QuarterlyReportDownloadFilters) {
+  const params = new URLSearchParams()
+  params.set('limit', String(filters.limit ?? 10))
+  if (filters.cursor) params.set('cursor', filters.cursor)
+  if (filters.search) params.set('search', filters.search)
+  return params.toString()
+}
+
+export function listQuarterlyReportDownloadsPage(filters: QuarterlyReportDownloadFilters = {}) {
+  return request<CursorPage<QuarterlyReportDownloadListItem>>('/api/v1/admin/quarterly-reports/downloads/page?' + buildQuarterlyReportDownloadQuery(filters))
+}
+
+export function getQuarterlyReportDownloadStats() {
+  return request<QuarterlyReportDownloadStats>('/api/v1/admin/quarterly-reports/downloads/stats')
 }
 
 
