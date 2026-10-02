@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import QRCode from 'qrcode'
 import {
   Briefcase,
+  Building2,
   CalendarDays,
   Check,
   ChevronDown,
@@ -13,6 +14,7 @@ import {
   FileText,
   Link2,
   Mail,
+  Phone,
   RefreshCw,
   QrCode,
   Search,
@@ -555,6 +557,14 @@ function RoundtableDetailDrawer({
                 <Briefcase aria-hidden="true" size={16} />
                 <span>{displayText(detail.position, 'Chưa nhập chức vụ')}</span>
               </div>
+              {detail.companyName ? <div>
+                <Building2 aria-hidden="true" size={16} />
+                <span>{detail.companyName}</span>
+              </div> : null}
+              {detail.phone ? <div>
+                <Phone aria-hidden="true" size={16} />
+                <span>{detail.phone}</span>
+              </div> : null}
               <div>
                 <CalendarDays aria-hidden="true" size={16} />
                 <span>{formatDateTime(detail.registeredAt)}</span>

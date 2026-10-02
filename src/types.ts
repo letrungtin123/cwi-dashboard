@@ -108,10 +108,12 @@ export type RoundtableSubmissionSummary = {
 }
 
 export type RoundtableRegistrationListItem = {
+  companyName: string | null
   email: string
   fullName: string
   id: string
   linkedSubmission: RoundtableSubmissionSummary | null
+  phone: string | null
   position: string | null
   registeredAt: string
   source: string
