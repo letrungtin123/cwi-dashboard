@@ -117,6 +117,7 @@ export type RoundtableRegistrationListItem = {
   position: string | null
   registeredAt: string
   source: string
+  speakerQuestion: string | null
 }
 
 export type RoundtableRegistrationDetail = RoundtableRegistrationListItem & {

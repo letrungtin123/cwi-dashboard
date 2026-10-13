@@ -14,6 +14,7 @@ import {
   FileText,
   Link2,
   Mail,
+  MessageCircleQuestion,
   Phone,
   RefreshCw,
   QrCode,
@@ -574,6 +575,16 @@ function RoundtableDetailDrawer({
                 <span>{linkedSubmission ? 'Đã khảo sát' : 'Đăng ký độc lập'}</span>
               </div>
             </section>
+
+            {detail.speakerQuestion ? (
+              <section className="detail-section">
+                <div className="detail-section-heading">
+                  <MessageCircleQuestion aria-hidden="true" size={17} />
+                  <h3>Câu hỏi dành cho diễn giả</h3>
+                </div>
+                <p>{detail.speakerQuestion}</p>
+              </section>
+            ) : null}
 
             {linkedSubmission ? (
               <section className="detail-section">
