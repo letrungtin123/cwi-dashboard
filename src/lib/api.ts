@@ -141,6 +141,7 @@ function buildSubmissionQuery(filters: SubmissionFilters) {
   if (filters.reportPdfUploaded !== undefined) params.set('reportPdfUploaded', String(filters.reportPdfUploaded))
   if (filters.emailStatus) params.set('emailStatus', filters.emailStatus)
   if (filters.search) params.set('search', filters.search)
+  if (filters.surveyVersion) params.set('surveyVersion', filters.surveyVersion)
 
   return params.toString()
 }
@@ -168,8 +169,9 @@ export function listSubmissions(filters: SubmissionFilters = {}) {
   return request<SubmissionListItem[]>(`/api/v1/admin/survey-submissions?${buildSubmissionQuery(filters)}`)
 }
 
-export function getSubmissionStats() {
-  return request<SubmissionStats>('/api/v1/admin/survey-submissions/stats')
+export function getSubmissionStats(surveyVersion?: string) {
+  const query = surveyVersion ? '?' + new URLSearchParams({ surveyVersion }).toString() : ''
+  return request<SubmissionStats>('/api/v1/admin/survey-submissions/stats' + query)
 }
 
 export function getSubmissionDetail(id: string) {

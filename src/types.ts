@@ -42,6 +42,7 @@ export type SubmissionListItem = {
   statusNote: string
   submittedAt: string
   submissionStatus: SubmissionStatus
+  surveyVersion: string
 }
 
 export type SubmissionAnswer = {
@@ -76,6 +77,7 @@ export type SubmissionStats = {
   part1Only: number
   part2RefusedPrivacy: number
   roundtableRegistered: number
+  surveyVersions: Array<{ surveyVersion: string; totalSubmissions: number }>
   totalSubmissions: number
 }
 
@@ -90,6 +92,7 @@ export type SubmissionFilters = {
   roundtable?: 'true' | 'false'
   search?: string
   status?: SubmissionStatus
+  surveyVersion?: string
 }
 
 export type RoundtableLinkStatus = 'linked' | 'standalone'
@@ -195,6 +198,7 @@ export type ExportFilters = {
   roundtableRegistered?: boolean
   search?: string
   status?: SubmissionStatus
+  surveyVersion?: string
 }
 
 export type ExportJob = {
