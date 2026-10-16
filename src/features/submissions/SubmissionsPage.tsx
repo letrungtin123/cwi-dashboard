@@ -78,7 +78,20 @@ const emailStatusOptions: Array<SelectOption<EmailStatusOption>> = [
   { description: 'Chỉ người gửi email bị lỗi', label: 'Gửi email lỗi', value: 'failed' },
 ]
 
-function buildFilters(search: string, status: StatusOption, reportStatus: ReportStatusOption, emailStatus: EmailStatusOption, limit: number, cursor: PageCursor): SubmissionFilters {
+// Quarters come from the stored submissions, so a new question set appears
+// here as soon as its first submission is saved.
+function buildSurveyVersionOptions(stats: SubmissionStats | null): Array<SelectOption<string>> {
+  return [
+    { description: 'Hiển thị lượt gửi của mọi bộ câu hỏi', label: 'Tất cả quý', value: 'all' },
+    ...(stats?.surveyVersions ?? []).map((version) => ({
+      description: `${formatNumber(version.totalSubmissions)} lượt gửi`,
+      label: `Bộ ${version.surveyVersion}`,
+      value: version.surveyVersion,
+    })),
+  ]
+}
+
+function buildFilters(search: string, status: StatusOption, reportStatus: ReportStatusOption, emailStatus: EmailStatusOption, surveyVersion: string, limit: number, cursor: PageCursor): SubmissionFilters {
   return {
     before: cursor?.before,
     beforeId: cursor?.beforeId,
@@ -87,6 +100,7 @@ function buildFilters(search: string, status: StatusOption, reportStatus: Report
     emailStatus: emailStatus === 'all' ? undefined : emailStatus,
     search: search || undefined,
     status: status === 'all' ? undefined : status,
+    surveyVersion: surveyVersion === 'all' ? undefined : surveyVersion,
   }
 }
 
@@ -345,6 +359,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
                   <div className="count-cell">
                     <strong>{item.answersCount}</strong>
                     <span>câu trả lời</span>
+                    <span>Bộ {item.surveyVersion}</span>
                   </div>
                 </td>
                 <td><ReportDeliveryFileStatus report={item.report} status={deliveryStatuses[item.id] ?? null} /></td>
@@ -396,7 +411,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
               <ReportDeliveryTableCell onChanged={onDeliveryChange} onReportRetry={onReportRetry} report={item.report} status={deliveryStatuses[item.id] ?? null} submissionId={item.id} />
             </div>
             <div className="submission-card-meta">
-              <span>{item.answersCount} câu trả lời</span>
+              <span>{item.answersCount} câu trả lời · Bộ {item.surveyVersion}</span>
             </div>
             <time>{formatDateTime(item.submittedAt)}</time>
           </motion.article>
@@ -460,6 +475,7 @@ function SubmissionDetailDrawer({
                 <StatusBadge status={detail.submissionStatus} />
                 <ReportBadge report={detail.report} />
                 <span className="answer-count-pill"><strong>{detail.answersCount}</strong> câu trả lời</span>
+                <span className="answer-count-pill">Bộ câu hỏi <strong>{detail.surveyVersion}</strong></span>
               </div>
               <p>{detail.statusNote}</p>
               <div className="detail-report-actions">
@@ -535,6 +551,7 @@ export function SubmissionsPage() {
   const [status, setStatus] = useState<StatusOption>('all')
   const [reportStatus, setReportStatus] = useState<ReportStatusOption>('all')
   const [emailStatus, setEmailStatus] = useState<EmailStatusOption>('all')
+  const [surveyVersion, setSurveyVersion] = useState('all')
   const [pageSize, setPageSize] = useState(defaultPageSize)
   const [page, setPage] = useState(1)
   const [pageCursors, setPageCursors] = useState<Array<PageCursor>>([null])
@@ -575,15 +592,18 @@ export function SubmissionsPage() {
   }, [draftSearch])
 
   const cursor = pageCursors[page - 1] ?? null
-  const filters = useMemo(() => buildFilters(search, status, reportStatus, emailStatus, pageSize, cursor), [cursor, emailStatus, pageSize, reportStatus, search, status])
+  const filters = useMemo(() => buildFilters(search, status, reportStatus, emailStatus, surveyVersion, pageSize, cursor), [cursor, emailStatus, pageSize, reportStatus, search, status, surveyVersion])
+  const statsSurveyVersion = surveyVersion === 'all' ? undefined : surveyVersion
+  const surveyVersionOptions = useMemo(() => buildSurveyVersionOptions(stats), [stats])
   const exportFilters = useMemo<ExportFilters>(() => ({
     search: search || undefined,
     status: status === 'all' ? undefined : status,
-  }), [search, status])
+    surveyVersion: statsSurveyVersion,
+  }), [search, status, statsSurveyVersion])
 
   const loadStats = useCallback(async (options: { silent?: boolean } = {}) => {
     try {
-      const nextStats = await getSubmissionStats()
+      const nextStats = await getSubmissionStats(statsSurveyVersion)
       setStats(nextStats)
       statsRef.current = nextStats
     } catch (caught) {
@@ -591,7 +611,7 @@ export function SubmissionsPage() {
       const message = caught instanceof Error ? caught.message : 'Không tải được thống kê.'
       setError(message)
     }
-  }, [])
+  }, [statsSurveyVersion])
 
   const loadPage = useCallback(async (options: { silent?: boolean } = {}) => {
     if (!options.silent) {
@@ -648,7 +668,7 @@ export function SubmissionsPage() {
       checking = true
 
       try {
-        const nextStats = await getSubmissionStats()
+        const nextStats = await getSubmissionStats(statsSurveyVersion)
         if (!active) return
 
         const countChanged = statsRef.current?.totalSubmissions !== nextStats.totalSubmissions
@@ -675,7 +695,7 @@ export function SubmissionsPage() {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.clearInterval(timer)
     }
-  }, [loadPage])
+  }, [loadPage, statsSurveyVersion])
 
   useEffect(() => {
     if (!selectedId) {
@@ -815,7 +835,7 @@ export function SubmissionsPage() {
         {campaignError && !campaignDialogOpen ? <p className="report-delivery-error report-delivery-inline-error">{campaignError}</p> : null}
         {deliveryStatusError ? <p className="report-delivery-error report-delivery-inline-error">{deliveryStatusError} Vui lòng bấm Tải lại.</p> : null}
 
-        <div className="filter-bar">
+        <div className="filter-bar submissions-filter-bar">
           <div className="search-box">
             <Search aria-hidden="true" size={18} />
             <input
@@ -826,6 +846,7 @@ export function SubmissionsPage() {
               value={draftSearch}
             />
           </div>
+          <CustomSelect label="Quý khảo sát" onChange={(next) => { setSurveyVersion(next); setPage(1); setPageCursors([null]) }} options={surveyVersionOptions} value={surveyVersion} />
           <CustomSelect label="Trạng thái" onChange={(next) => { setStatus(next); setPage(1); setPageCursors([null]) }} options={statusOptions} value={status} />
           <CustomSelect label="Báo cáo" onChange={(next) => { setReportStatus(next); setPage(1); setPageCursors([null]) }} options={reportStatusOptions} value={reportStatus} />
           <CustomSelect label="Email" onChange={(next) => { setEmailStatus(next); setPage(1); setPageCursors([null]) }} options={emailStatusOptions} value={emailStatus} />
