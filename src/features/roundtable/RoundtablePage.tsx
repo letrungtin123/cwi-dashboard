@@ -31,6 +31,7 @@ import {
 import { useAuth } from '@/features/auth/AuthProvider'
 import { ExportDataButton } from '@/components/ExportDataButton'
 import { PublicLinkBar } from '@/components/PublicLinkBar'
+import { RoundtableEventSettings } from './RoundtableEventSettings'
 import { formatDateTime, formatNumber, valueToText } from '@/lib/format'
 import { getLandingUrl } from '@/lib/landing'
 import { TablePagination } from '@/components/TablePagination'
@@ -90,13 +91,26 @@ function getLinkOptions(eventName: string): Array<SelectOption<LinkFilter>> {
   ]
 }
 
-function buildFilters(search: string, linkStatus: LinkFilter, limit: number, cursor: PageCursor): RoundtableRegistrationFilters {
+function buildFilters(search: string, linkStatus: LinkFilter, quarter: string, limit: number, cursor: PageCursor): RoundtableRegistrationFilters {
   return {
     cursor: cursor ?? undefined,
     limit,
     linkStatus: linkStatus === 'all' ? undefined : linkStatus,
+    quarter: quarter === 'all' ? undefined : quarter,
     search: search || undefined,
   }
+}
+
+// Roundtable quarters come from the stored registrations, newest first.
+function buildQuarterOptions(stats: RoundtableRegistrationStats | null): Array<SelectOption<string>> {
+  return [
+    { description: 'Hiển thị đăng ký của mọi quý', label: 'Tất cả quý', value: 'all' },
+    ...(stats?.quarters ?? []).map((item) => ({
+      description: `${formatNumber(item.totalRegistrations)} lượt đăng ký`,
+      label: `Quý ${item.quarter}`,
+      value: item.quarter,
+    })),
+  ]
 }
 
 function displayText(value: string | null | undefined, fallback = 'Chưa có dữ liệu') {
@@ -333,7 +347,10 @@ function RoundtableTable({ items, onSelect }: { items: RoundtableRegistrationLis
                 </td>
                 <td>
                   <div className="stack-cell">
+                    {item.quarter ? <span>Quý: {item.quarter}</span> : null}
                     <span>Chức vụ: {displayText(item.position, 'Chưa nhập')}</span>
+                    {item.phone ? <span>SĐT: {item.phone}</span> : null}
+                    {item.companyName ? <span>Công ty: {item.companyName}</span> : null}
                     <span>ID: {item.id}</span>
                   </div>
                 </td>
@@ -381,7 +398,7 @@ function RoundtableTable({ items, onSelect }: { items: RoundtableRegistrationLis
             <div className="submission-card-statuses">
               <LinkBadge linked={Boolean(item.linkedSubmission)} />
             </div>
-            <p>{item.email}</p>
+            <p>{item.email}{item.quarter ? ` · Quý ${item.quarter}` : ''}</p>
             {item.linkedSubmission ? <p>Khảo sát: {item.linkedSubmission.fullName} · {item.linkedSubmission.answersCount} câu</p> : <p>Chưa có lượt gửi khảo sát liên quan</p>}
             <time>{formatDateTime(item.registeredAt)}</time>
           </motion.article>
@@ -577,16 +594,17 @@ function RoundtableDetailDrawer({
 export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind }) {
   const { user } = useAuth()
   const { eventName, eventTitle } = eventCopy[kind]
+  const isRoundtable = kind === 'roundtable'
   const registrationApi = useMemo(
     () => kind === 'roundtable'
       ? {
           getDetail: getRoundtableRegistrationDetail,
-          getStats: getRoundtableRegistrationStats,
+          getStats: (quarter?: string) => getRoundtableRegistrationStats(quarter),
           listPage: listRoundtableRegistrationsPage,
         }
       : {
           getDetail: getWebinarRegistrationDetail,
-          getStats: getWebinarRegistrationStats,
+          getStats: () => getWebinarRegistrationStats(),
           listPage: listWebinarRegistrationsPage,
         },
     [kind],
@@ -595,6 +613,7 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
   const [draftSearch, setDraftSearch] = useState('')
   const [search, setSearch] = useState('')
   const [linkStatus, setLinkStatus] = useState<LinkFilter>('all')
+  const [quarter, setQuarter] = useState('all')
   const [pageSize, setPageSize] = useState(defaultPageSize)
   const [page, setPage] = useState(1)
   const [pageCursors, setPageCursors] = useState<Array<PageCursor>>([null])
@@ -619,20 +638,24 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
   }, [draftSearch])
 
   const cursor = pageCursors[page - 1] ?? null
-  const filters = useMemo(() => buildFilters(search, linkStatus, pageSize, cursor), [cursor, linkStatus, pageSize, search])
+  // The quarter filter exists for Roundtable only; Webinar registrations have no quarter.
+  const selectedQuarter = isRoundtable && quarter !== 'all' ? quarter : undefined
+  const filters = useMemo(() => buildFilters(search, linkStatus, selectedQuarter ?? 'all', pageSize, cursor), [cursor, linkStatus, pageSize, search, selectedQuarter])
+  const quarterOptions = useMemo(() => buildQuarterOptions(stats), [stats])
   const exportFilters = useMemo<ExportFilters>(() => ({
     linkStatus: linkStatus === 'all' ? undefined : linkStatus,
+    quarter: selectedQuarter,
     search: search || undefined,
-  }), [linkStatus, search])
+  }), [linkStatus, search, selectedQuarter])
 
   const loadStats = useCallback(async () => {
     try {
-      setStats(await registrationApi.getStats())
+      setStats(await registrationApi.getStats(selectedQuarter))
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : `Không tải được thống kê ${eventName}.`
       setError(message)
     }
-  }, [eventName, registrationApi])
+  }, [eventName, registrationApi, selectedQuarter])
 
   const loadPage = useCallback(async () => {
     setIsLoading(true)
@@ -713,6 +736,8 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
         </section>
       )}
 
+      {isRoundtable ? <RoundtableEventSettings canEdit={user?.role === 'admin'} /> : null}
+
       <section aria-busy={isLoading} className="content-surface" data-loading={isLoading}>
         <div className="surface-head">
           <div>
@@ -736,17 +761,18 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
           url={getLandingUrl(`/?register=${kind}`)}
         />
 
-        <div className="filter-bar roundtable-filter-bar">
+        <div className={isRoundtable ? 'filter-bar roundtable-filter-bar has-quarter-filter' : 'filter-bar roundtable-filter-bar'}>
           <div className="search-box">
             <Search aria-hidden="true" size={18} />
             <input
               aria-label={`Tìm kiếm đăng ký ${eventName}`}
               onChange={(event) => setDraftSearch(event.target.value)}
-              placeholder="Tìm tên, email, chức vụ"
+              placeholder={isRoundtable ? 'Tìm tên, email, SĐT, công ty, chức vụ' : 'Tìm tên, email, chức vụ'}
               type="search"
               value={draftSearch}
             />
           </div>
+          {isRoundtable ? <CustomSelect label="Quý" onChange={(next) => { setQuarter(next); setPage(1); setPageCursors([null]) }} options={quarterOptions} value={quarter} /> : null}
           <CustomSelect label="Liên kết" onChange={(next) => { setLinkStatus(next); setPage(1); setPageCursors([null]) }} options={linkOptions} value={linkStatus} />
         </div>
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Briefcase,
+  Building2,
   CalendarDays,
   Check,
   CheckCircle2,
@@ -499,6 +500,12 @@ function SubmissionDetailDrawer({
                 <Briefcase aria-hidden="true" size={16} />
                 <span>{detail.position}</span>
               </div>
+              {detail.companyName ? (
+                <div>
+                  <Building2 aria-hidden="true" size={16} />
+                  <span>{detail.companyName}</span>
+                </div>
+              ) : null}
               <div>
                 <CalendarDays aria-hidden="true" size={16} />
                 <span>{formatDateTime(detail.submittedAt)}</span>

@@ -4,6 +4,7 @@ import type {
   RoundtableRegistrationDetail,
   RoundtableRegistrationFilters,
   RoundtableRegistrationListItem,
+  RoundtableEvent,
   RoundtableRegistrationStats,
   WebinarRegistrationDetail,
   WebinarRegistrationFilters,
@@ -156,6 +157,7 @@ function buildRoundtableQuery(filters: RoundtableRegistrationFilters) {
     if (filters.beforeId) params.set('beforeId', filters.beforeId)
   }
   if (filters.linkStatus) params.set('linkStatus', filters.linkStatus)
+  if (filters.quarter) params.set('quarter', filters.quarter)
   if (filters.search) params.set('search', filters.search)
 
   return params.toString()
@@ -186,8 +188,17 @@ export function listRoundtableRegistrations(filters: RoundtableRegistrationFilte
   return request<RoundtableRegistrationListItem[]>(`/api/v1/admin/roundtable-registrations?${buildRoundtableQuery(filters)}`)
 }
 
-export function getRoundtableRegistrationStats() {
-  return request<RoundtableRegistrationStats>('/api/v1/admin/roundtable-registrations/stats')
+export function getRoundtableRegistrationStats(quarter?: string) {
+  const query = quarter ? '?' + new URLSearchParams({ quarter }).toString() : ''
+  return request<RoundtableRegistrationStats>('/api/v1/admin/roundtable-registrations/stats' + query)
+}
+
+export function getRoundtableEvent() {
+  return request<RoundtableEvent>('/api/v1/admin/roundtable-event')
+}
+
+export function saveRoundtableEvent(input: { eventLocation: string; eventTime: string }) {
+  return request<RoundtableEvent>('/api/v1/admin/roundtable-event', { body: JSON.stringify(input), method: 'PUT' }, { csrf: true })
 }
 
 export function getRoundtableRegistrationDetail(id: string) {

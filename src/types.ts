@@ -29,6 +29,7 @@ export type ReportSummary = {
 
 export type SubmissionListItem = {
   answersCount: number
+  companyName: string | null
   email: string
   fullName: string
   id: string
@@ -118,6 +119,8 @@ export type RoundtableRegistrationListItem = {
   linkedSubmission: RoundtableSubmissionSummary | null
   phone: string | null
   position: string | null
+  // Roundtable quarter; null for Webinar registrations.
+  quarter: string | null
   registeredAt: string
   source: string
   speakerQuestion: string | null
@@ -131,6 +134,8 @@ export type RoundtableRegistrationDetail = RoundtableRegistrationListItem & {
 
 export type RoundtableRegistrationStats = {
   linkedSubmissions: number
+  // Roundtable only: every quarter with registrations, newest first.
+  quarters?: Array<{ quarter: string; totalRegistrations: number }>
   standaloneRegistrations: number
   todayRegistrations: number
   totalRegistrations: number
@@ -142,7 +147,16 @@ export type RoundtableRegistrationFilters = {
   cursor?: string
   limit?: number
   linkStatus?: RoundtableLinkStatus
+  quarter?: string
   search?: string
+}
+
+export type RoundtableEvent = {
+  eventLocation: string | null
+  eventTime: string | null
+  quarter: string
+  updatedAt: string | null
+  updatedByEmail: string | null
 }
 
 export type WebinarLinkStatus = RoundtableLinkStatus
@@ -195,6 +209,7 @@ export type ExportDataset = 'submissions' | 'roundtable' | 'webinar'
 
 export type ExportFilters = {
   linkStatus?: 'linked' | 'standalone'
+  quarter?: string
   roundtableRegistered?: boolean
   search?: string
   status?: SubmissionStatus
