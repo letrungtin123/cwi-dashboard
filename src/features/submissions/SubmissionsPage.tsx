@@ -19,6 +19,8 @@ import {
   X,
 } from 'lucide-react'
 import { ExportDataButton } from '@/components/ExportDataButton'
+import { PublicLinkBar } from '@/components/PublicLinkBar'
+import { getLandingUrl } from '@/lib/landing'
 import { ReportDeliveryCampaignDialog } from './ReportDeliveryCampaignDialog'
 import { ReportDeliveryFileStatus, ReportDeliveryTableCell } from './ReportDeliveryControls'
 import { TablePagination } from '@/components/TablePagination'
@@ -834,6 +836,15 @@ export function SubmissionsPage() {
 
         {campaignError && !campaignDialogOpen ? <p className="report-delivery-error report-delivery-inline-error">{campaignError}</p> : null}
         {deliveryStatusError ? <p className="report-delivery-error report-delivery-inline-error">{deliveryStatusError} Vui lòng bấm Tải lại.</p> : null}
+
+        {/* entry=qr makes the landing open the survey directly and start a fresh session. */}
+        <PublicLinkBar
+          copiedMessage="Đã sao chép link khảo sát."
+          openLabel="Mở khảo sát"
+          qrFileName="ma-qr-khao-sat.png"
+          title="Link làm khảo sát"
+          url={getLandingUrl('/survey?entry=qr')}
+        />
 
         <div className="filter-bar submissions-filter-bar">
           <div className="search-box">

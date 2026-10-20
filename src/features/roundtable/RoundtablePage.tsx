@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import QRCode from 'qrcode'
 import {
   Briefcase,
   Building2,
@@ -9,15 +8,12 @@ import {
   ChevronDown,
   ChevronRight,
   CircleAlert,
-  Copy,
-  ExternalLink,
   FileText,
   Link2,
   Mail,
   MessageCircleQuestion,
   Phone,
   RefreshCw,
-  QrCode,
   Search,
   UserCheck,
   UsersRound,
@@ -34,7 +30,9 @@ import {
 } from '@/lib/api'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { ExportDataButton } from '@/components/ExportDataButton'
+import { PublicLinkBar } from '@/components/PublicLinkBar'
 import { formatDateTime, formatNumber, valueToText } from '@/lib/format'
+import { getLandingUrl } from '@/lib/landing'
 import { TablePagination } from '@/components/TablePagination'
 import type {
   ExportFilters,
@@ -131,87 +129,6 @@ function ReportDownloadLink({ report }: { report: ReportSummary }) {
       <FileText aria-hidden="true" size={15} />
       <span>Tải PDF</span>
     </a>
-  )
-}
-
-function getPublicRegistrationUrl(kind: EventRegistrationKind) {
-  const configuredOrigin = import.meta.env.VITE_LANDING_BASE_URL?.trim().replace(/\/+$/, '')
-  const landingOrigin = configuredOrigin || (import.meta.env.DEV ? 'http://localhost:5670' : window.location.origin)
-  return `${landingOrigin}/?register=${kind}`
-}
-
-function PublicRegistrationLink({ eventName, kind }: { eventName: string; kind: EventRegistrationKind }) {
-  const url = useMemo(() => getPublicRegistrationUrl(kind), [kind])
-  const [actionStatus, setActionStatus] = useState('')
-  const [isGeneratingQr, setIsGeneratingQr] = useState(false)
-
-  const copyUrl = async () => {
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url)
-      } else {
-        const textArea = document.createElement('textarea')
-        textArea.value = url
-        textArea.style.cssText = 'left:-9999px;position:fixed;top:0'
-        document.body.append(textArea)
-        textArea.select()
-        const copied = document.execCommand('copy')
-        textArea.remove()
-        if (!copied) throw new Error('copy_failed')
-      }
-      setActionStatus('Đã sao chép link đăng ký.')
-    } catch {
-      setActionStatus('Không thể sao chép link trên trình duyệt này.')
-    }
-  }
-
-  const downloadQr = async () => {
-    setIsGeneratingQr(true)
-    try {
-      const dataUrl = await QRCode.toDataURL(url, {
-        color: { dark: '#003d7c', light: '#ffffffff' },
-        errorCorrectionLevel: 'M',
-        margin: 2,
-        width: 1024,
-      })
-      const anchor = document.createElement('a')
-      anchor.download = `ma-qr-dang-ky-${kind}.png`
-      anchor.href = dataUrl
-      document.body.append(anchor)
-      anchor.click()
-      anchor.remove()
-      setActionStatus('Đã tải mã QR.')
-    } catch {
-      setActionStatus('Không thể tạo mã QR. Vui lòng thử lại.')
-    } finally {
-      setIsGeneratingQr(false)
-    }
-  }
-
-  return (
-    <div className="event-registration-link-bar">
-      <div className="event-registration-link-copy">
-        <span className="event-registration-link-icon"><Link2 aria-hidden="true" size={18} /></span>
-        <div>
-          <strong>Link đăng ký {eventName}</strong>
-          <a className="event-registration-link-url" href={url}>{url}</a>
-        </div>
-      </div>
-      <div className="event-registration-link-actions">
-        <a className="secondary-button event-registration-open-link" href={url}>
-          <ExternalLink aria-hidden="true" size={16} />
-          <span>Mở form</span>
-        </a>
-        <button className="secondary-button event-registration-download-qr" disabled={isGeneratingQr} onClick={() => void downloadQr()} type="button">
-          <QrCode aria-hidden="true" size={17} />
-          <span>{isGeneratingQr ? 'Đang tạo...' : 'Tải mã QR'}</span>
-        </button>
-        <button aria-label={`Sao chép link đăng ký ${eventName}`} className="event-registration-copy-link" data-tooltip="Sao chép link" onClick={() => void copyUrl()} type="button">
-          <Copy aria-hidden="true" size={17} />
-        </button>
-      </div>
-      {actionStatus ? <p aria-live="polite" className="event-registration-copy-status">{actionStatus}</p> : null}
-    </div>
   )
 }
 
@@ -811,7 +728,13 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
           </div>
         </div>
 
-        <PublicRegistrationLink eventName={eventName} kind={kind} />
+        <PublicLinkBar
+          copiedMessage="Đã sao chép link đăng ký."
+          openLabel="Mở form"
+          qrFileName={`ma-qr-dang-ky-${kind}.png`}
+          title={`Link đăng ký ${eventName}`}
+          url={getLandingUrl(`/?register=${kind}`)}
+        />
 
         <div className="filter-bar roundtable-filter-bar">
           <div className="search-box">
