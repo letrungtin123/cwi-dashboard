@@ -16,6 +16,7 @@ export type AuthSession = {
 export type SubmissionStatus = 'part1_only' | 'part2_refused_privacy' | 'full_private_report'
 export type PrivacyConsent = 'yes' | 'no' | 'not_applicable'
 export type ReportStatus = 'not_started' | 'generating' | 'completed' | 'failed' | 'skipped'
+export type SurveyLanguage = 'vi' | 'en'
 
 export type ReportSummary = {
   errorMessage: string | null
@@ -33,6 +34,8 @@ export type SubmissionListItem = {
   email: string
   fullName: string
   id: string
+  // Language the survey was taken in; answers are stored in Vietnamese either way.
+  language: SurveyLanguage
   part1Completed: boolean
   part2Completed: boolean
   position: string

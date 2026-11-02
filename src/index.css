@@ -2128,6 +2128,38 @@ td:nth-child(7) {
   white-space: nowrap;
 }
 
+/* Survey language tag. Two classes so it beats the generic `.count-cell span` and card-meta pill styles.
+   In the table it sits beside the answer count: the column is too narrow for "Bộ 2026Q4" plus the tag. */
+.count-cell .count-line {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+}
+
+.language-badge.is-vi,
+.language-badge.is-en {
+  align-items: center;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  background: #f2f4f7;
+  border: 1px solid #e4e7ec;
+  border-radius: 999px;
+  color: #475467;
+  display: inline-flex;
+  font-size: 10.5px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  padding: 2px 7px;
+  width: fit-content;
+}
+
+.language-badge.is-en {
+  background: #eef4ff;
+  border-color: #c7d7fe;
+  color: var(--cwi-blue-dark);
+}
+
 .roundtable-linked-summary {
   display: grid;
   gap: 10px;
