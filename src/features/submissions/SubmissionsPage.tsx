@@ -28,7 +28,7 @@ import { TablePagination } from '@/components/TablePagination'
 import { apiUrl, confirmReportDeliveryCampaign, getReportDeliveryCampaign, getReportDeliveryStatuses, getSubmissionDetail, getSubmissionStats, listSubmissionsPage, previewReportDeliveryCampaign } from '@/lib/api'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { formatDateTime, formatNumber, valueToText } from '@/lib/format'
-import type { ExportFilters, PrivacyConsent, ReportDeliveryCampaign, ReportDeliveryStatus, ReportStatus, ReportSummary, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus } from '@/types'
+import type { ExportFilters, PrivacyConsent, ReportDeliveryCampaign, ReportDeliveryStatus, ReportStatus, ReportSummary, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus, SurveyLanguage } from '@/types'
 
 type StatusOption = 'all' | SubmissionStatus
 type ReportStatusOption = 'all' | ReportStatus
@@ -117,6 +117,14 @@ function questionTypeLabel(type: string) {
 function StatusBadge({ status }: { status: SubmissionStatus }) {
   const meta = statusMeta[status]
   return <span className={`status-badge ${meta.className}`}>{meta.label}</span>
+}
+
+function LanguageBadge({ language }: { language: SurveyLanguage }) {
+  return (
+    <span className={`language-badge is-${language}`} title={language === 'en' ? 'Làm khảo sát bằng tiếng Anh' : 'Làm khảo sát bằng tiếng Việt'}>
+      {language === 'en' ? 'EN' : 'VI'}
+    </span>
+  )
 }
 
 function ReportBadge({ report }: { report: ReportSummary }) {
@@ -360,7 +368,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
                 </td>
                 <td>
                   <div className="count-cell">
-                    <strong>{item.answersCount}</strong>
+                    <span className="count-line"><strong>{item.answersCount}</strong><LanguageBadge language={item.language} /></span>
                     <span>câu trả lời</span>
                     <span>Bộ {item.surveyVersion}</span>
                   </div>
@@ -415,6 +423,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
             </div>
             <div className="submission-card-meta">
               <span>{item.answersCount} câu trả lời · Bộ {item.surveyVersion}</span>
+              <LanguageBadge language={item.language} />
             </div>
             <time>{formatDateTime(item.submittedAt)}</time>
           </motion.article>
@@ -479,6 +488,7 @@ function SubmissionDetailDrawer({
                 <ReportBadge report={detail.report} />
                 <span className="answer-count-pill"><strong>{detail.answersCount}</strong> câu trả lời</span>
                 <span className="answer-count-pill">Bộ câu hỏi <strong>{detail.surveyVersion}</strong></span>
+                <LanguageBadge language={detail.language} />
               </div>
               <p>{detail.statusNote}</p>
               <div className="detail-report-actions">
