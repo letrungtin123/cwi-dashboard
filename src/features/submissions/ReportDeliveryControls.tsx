@@ -1,6 +1,8 @@
 import { useRef, useState, type ChangeEvent } from 'react'
 import { CheckCircle2, Download, FileText, LockKeyhole, RotateCcw, Upload, XCircle } from 'lucide-react'
+import { useAuth } from '@/features/auth/AuthProvider'
 import { apiUrl, retryReportEmail, retryReportGeneration, uploadReportPdf } from '@/lib/api'
+import { canManageContent } from '@/lib/roles'
 import type { ReportDeliveryStatus, ReportSummary } from '@/types'
 import { pausedReportTooltip } from './reportGenerationLabels'
 
@@ -35,6 +37,7 @@ export function ReportDeliveryTableCell({
   status: ReportDeliveryStatus | null
   submissionId: string
 }) {
+  const { user } = useAuth()
   const inputRef = useRef<HTMLInputElement>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [isRetrying, setIsRetrying] = useState(false)
@@ -85,6 +88,12 @@ export function ReportDeliveryTableCell({
     } finally {
       setIsRetryingReport(false)
     }
+  }
+
+  // Viewers: status only, no buttons and no file download.
+  if (!canManageContent(user?.role)) {
+    if (actionOnly) return !status ? <span className="report-table-state report-table-state-error">Chưa tải được trạng thái PDF</span> : null
+    return <ReportDeliveryFileStatus report={report} status={status} />
   }
 
   if (actionOnly) {

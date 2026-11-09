@@ -159,7 +159,8 @@ function DeliveryStatusBadge({ status }: { status: ReportDeliveryStatus | null }
 }
 
 function ReportDownloadLink({ report }: { report: ReportSummary }) {
-  if (!report.pdfDownloadUrl) return null
+  const { user } = useAuth()
+  if (!report.pdfDownloadUrl || !canManageContent(user?.role)) return null
 
   return (
     <a className="mini-link-button" data-tooltip="Tải báo cáo PDF" href={apiUrl(report.pdfDownloadUrl)} rel="noreferrer" target="_blank">

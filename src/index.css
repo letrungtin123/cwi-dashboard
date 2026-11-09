@@ -5742,3 +5742,8 @@ tr.is-selected > td {
     margin: 14px 14px 0;
   }
 }
+
+/* Quarterly reports, viewer accounts: copy URL / QR messages above the list. */
+.quarterly-report-message.quarterly-report-list-message {
+  margin: 14px 22px 0;
+}
