@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { motion } from 'framer-motion'
 import {
   Briefcase,
   Building2,
   CalendarDays,
-  Check,
-  ChevronDown,
   ChevronRight,
   CircleAlert,
   FileText,
@@ -35,6 +33,8 @@ import { PublicLinkBar } from '@/components/PublicLinkBar'
 import { RoundtableEventSettings } from './RoundtableEventSettings'
 import { formatDateTime, formatNumber, valueToText } from '@/lib/format'
 import { getLandingUrl } from '@/lib/landing'
+import { canManageContent } from '@/lib/roles'
+import { CustomSelect, type SelectOption } from '@/components/CustomSelect'
 import { TablePagination } from '@/components/TablePagination'
 import type {
   ExportFilters,
@@ -49,7 +49,6 @@ import type {
 } from '@/types'
 
 type LinkFilter = 'all' | RoundtableLinkStatus
-type SelectOption<T extends string> = { description?: string; label: string; value: T }
 export type EventRegistrationKind = 'roundtable' | 'webinar'
 
 const eventCopy: Record<EventRegistrationKind, { eventName: string; eventTitle: string }> = {
@@ -157,82 +156,6 @@ function StatTile({ icon, label, tooltip, value }: { icon: ReactNode; label: str
         <strong>{value}</strong>
       </div>
     </article>
-  )
-}
-
-function CustomSelect<T extends string>({ label, onChange, options, value }: { label: string; onChange: (value: T) => void; options: Array<SelectOption<T>>; value: T }) {
-  const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-  const selected = options.find((option) => option.value === value) ?? options[0]
-
-  useEffect(() => {
-    if (!open) return
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
-    }
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [open])
-
-  return (
-    <div className="custom-select" ref={rootRef}>
-      <button
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        className={`custom-select-trigger${open ? ' is-open' : ''}`}
-        onClick={() => setOpen((current) => !current)}
-        type="button"
-      >
-        <span className="custom-select-label">{label}</span>
-        <span className="custom-select-value">{selected.label}</span>
-        <ChevronDown aria-hidden="true" className="custom-select-chevron" size={17} />
-      </button>
-
-      <AnimatePresence>
-        {open ? (
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            className="custom-select-menu"
-            exit={{ opacity: 0, y: -6 }}
-            initial={{ opacity: 0, y: -6 }}
-            role="listbox"
-            transition={{ duration: 0.14, ease: 'easeOut' }}
-          >
-            {options.map((option) => {
-              const isSelected = option.value === value
-              return (
-                <button
-                  aria-selected={isSelected}
-                  className={`custom-select-option${isSelected ? ' is-selected' : ''}`}
-                  key={option.value}
-                  onClick={() => {
-                    onChange(option.value)
-                    setOpen(false)
-                  }}
-                  role="option"
-                  type="button"
-                >
-                  <span className="custom-select-option-text">
-                    <strong>{option.label}</strong>
-                    {option.description ? <small>{option.description}</small> : null}
-                  </span>
-                  {isSelected ? <Check aria-hidden="true" size={16} /> : null}
-                </button>
-              )
-            })}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
   )
 }
 
@@ -738,7 +661,7 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
         </section>
       )}
 
-      {isRoundtable ? <RoundtableEventSettings canEdit={user?.role === 'admin'} /> : null}
+      {isRoundtable ? <RoundtableEventSettings canEdit={canManageContent(user?.role)} /> : null}
 
       <section aria-busy={isLoading} className="content-surface" data-loading={isLoading}>
         <div className="surface-head">
@@ -747,7 +670,7 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
             <h2>Đăng ký {eventTitle}</h2>
           </div>
           <div className="surface-actions">
-            {user?.role === 'admin' ? <ExportDataButton dataset={kind} filters={exportFilters} /> : null}
+            {canManageContent(user?.role) ? <ExportDataButton dataset={kind} filters={exportFilters} /> : null}
             <button className="secondary-button" onClick={() => { setPage(1); setPageCursors([null]); void loadStats(); if (page === 1) void loadPage() }} type="button">
               <RefreshCw aria-hidden="true" size={16} />
               <span>Tải lại</span>

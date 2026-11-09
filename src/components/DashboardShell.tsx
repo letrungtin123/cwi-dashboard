@@ -1,13 +1,15 @@
 import { useState, type ReactNode } from 'react'
-import { BarChart3, ChevronsLeft, ChevronsRight, Download, FileStack, LogOut, Menu, UsersRound, Video, X } from 'lucide-react'
+import { BarChart3, ChevronsLeft, ChevronsRight, Download, FileStack, KeyRound, LogOut, Menu, ShieldCheck, UsersRound, Video, X } from 'lucide-react'
 import logoSrc from '@/assets/cwi-logo.svg'
+import { isSuperadmin, ROLE_LABELS } from '@/lib/roles'
 import type { AdminUser } from '@/types'
 
-export type DashboardSection = 'submissions' | 'roundtable' | 'webinar' | 'quarterlyReports' | 'quarterlyReportDownloads'
+export type DashboardSection = 'submissions' | 'roundtable' | 'webinar' | 'quarterlyReports' | 'quarterlyReportDownloads' | 'adminUsers'
 
 type DashboardShellProps = {
   activeSection: DashboardSection
   children: ReactNode
+  onChangePassword: () => void
   onLogout: () => Promise<void>
   onSectionChange: (section: DashboardSection) => void
   title: string
@@ -22,14 +24,35 @@ const navItems: Array<{ icon: ReactNode; label: string; section: DashboardSectio
   { icon: <Download aria-hidden="true" size={18} />, label: 'Danh sách tải báo cáo quý', section: 'quarterlyReportDownloads' },
 ]
 
-export function DashboardShell({ activeSection, children, onLogout, onSectionChange, title, user }: DashboardShellProps) {
+const systemNavItems: typeof navItems = [
+  { icon: <ShieldCheck aria-hidden="true" size={18} />, label: 'Quản lý quản trị viên', section: 'adminUsers' },
+]
+
+export function DashboardShell({ activeSection, children, onChangePassword, onLogout, onSectionChange, title, user }: DashboardShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const roleLabel = user.role === 'admin' ? 'Quản trị viên' : 'Người xem'
+  const roleLabel = ROLE_LABELS[user.role] ?? 'Người xem'
 
   const handleSectionChange = (section: DashboardSection) => {
     onSectionChange(section)
     setMobileOpen(false)
+  }
+
+  const renderNavItem = (item: (typeof navItems)[number]) => {
+    const active = item.section === activeSection
+    return (
+      <button
+        aria-current={active ? 'page' : undefined}
+        className={`nav-item${active ? ' active' : ''}`}
+        data-tooltip={sidebarCollapsed ? item.label : undefined}
+        key={item.section}
+        onClick={() => handleSectionChange(item.section)}
+        type="button"
+      >
+        {item.icon}
+        <span>{item.label}</span>
+      </button>
+    )
   }
 
   return (
@@ -48,23 +71,17 @@ export function DashboardShell({ activeSection, children, onLogout, onSectionCha
 
         <p className="sidebar-section-label">Nội dung</p>
         <nav className="sidebar-nav" aria-label="Điều hướng bảng quản trị">
-          {navItems.map((item) => {
-            const active = item.section === activeSection
-            return (
-              <button
-                aria-current={active ? 'page' : undefined}
-                className={`nav-item${active ? ' active' : ''}`}
-                data-tooltip={sidebarCollapsed ? item.label : undefined}
-                key={item.section}
-                onClick={() => handleSectionChange(item.section)}
-                type="button"
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </button>
-            )
-          })}
+          {navItems.map(renderNavItem)}
         </nav>
+
+        {isSuperadmin(user.role) ? (
+          <>
+            <p className="sidebar-section-label">Hệ thống</p>
+            <nav className="sidebar-nav" aria-label="Quản trị hệ thống">
+              {systemNavItems.map(renderNavItem)}
+            </nav>
+          </>
+        ) : null}
 
         <div className="sidebar-footer">
           <div className="sidebar-user" data-tooltip={sidebarCollapsed ? `${user.displayName || user.email} · ${roleLabel}` : undefined}>
@@ -74,10 +91,16 @@ export function DashboardShell({ activeSection, children, onLogout, onSectionCha
               <span>{roleLabel}</span>
             </div>
           </div>
-          <button className="logout-button" data-tooltip={sidebarCollapsed ? 'Đăng xuất' : undefined} onClick={() => void onLogout()} type="button">
-            <LogOut aria-hidden="true" size={18} />
-            <span>Đăng xuất</span>
-          </button>
+          <div className="sidebar-footer-actions">
+            <button className="logout-button sidebar-password-button" data-tooltip={sidebarCollapsed ? 'Đổi mật khẩu' : undefined} onClick={onChangePassword} type="button">
+              <KeyRound aria-hidden="true" size={18} />
+              <span>Đổi mật khẩu</span>
+            </button>
+            <button className="logout-button" data-tooltip={sidebarCollapsed ? 'Đăng xuất' : undefined} onClick={() => void onLogout()} type="button">
+              <LogOut aria-hidden="true" size={18} />
+              <span>Đăng xuất</span>
+            </button>
+          </div>
         </div>
       </aside>
 
