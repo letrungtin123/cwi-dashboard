@@ -15,12 +15,11 @@ import {
   QrCode,
   RefreshCw,
   Search,
+  Trash2,
   UsersRound,
   X,
 } from 'lucide-react'
 import { ExportDataButton } from '@/components/ExportDataButton'
-import { PublicLinkBar } from '@/components/PublicLinkBar'
-import { getLandingUrl } from '@/lib/landing'
 import { ReportDeliveryCampaignDialog } from './ReportDeliveryCampaignDialog'
 import { ReportDeliveryFileStatus, ReportDeliveryTableCell } from './ReportDeliveryControls'
 import { pausedReportTooltip } from './reportGenerationLabels'
@@ -30,7 +29,8 @@ import { TablePagination } from '@/components/TablePagination'
 import { apiUrl, confirmReportDeliveryCampaign, getReportDeliveryCampaign, getReportDeliveryStatuses, getSubmissionDetail, getSubmissionStats, listSubmissionsPage, listSurveySources, previewReportDeliveryCampaign } from '@/lib/api'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { formatDateTime, formatNumber, valueToText } from '@/lib/format'
-import { canManageContent } from '@/lib/roles'
+import { canManageContent, isSuperadmin } from '@/lib/roles'
+import { SubmissionDeleteDialog } from './SubmissionDeleteDialog'
 import type { ExportFilters, PrivacyConsent, ReportDeliveryCampaign, ReportDeliveryStatus, ReportStatus, ReportSummary, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus, SurveyLanguage, SurveySource } from '@/types'
 
 type StatusOption = 'all' | SubmissionStatus
@@ -273,7 +273,28 @@ function EmptyState({ error, onRetry }: { error: string; onRetry: () => void }) 
   )
 }
 
-function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRetry, onSelect }: { deliveryStatuses: Record<string, ReportDeliveryStatus>; items: SubmissionListItem[]; onDeliveryChange: (status: ReportDeliveryStatus) => void; onReportRetry: () => Promise<void>; onSelect: (id: string) => void }) {
+const NOT_DELETABLE_TOOLTIP = 'Chỉ xóa được lượt gửi đang “Chờ tạo báo cáo” (chưa có PDF báo cáo).'
+
+// Tick box for super admins; only rows whose report is still waiting can be ticked.
+function RowSelectBox({ checked, item, onToggle }: { checked: boolean; item: SubmissionListItem; onToggle: (id: string) => void }) {
+  const box = (
+    <input
+      aria-label={item.deletable ? `Chọn lượt gửi của ${item.fullName}` : `Không chọn được lượt gửi của ${item.fullName}`}
+      checked={checked}
+      className="row-select-box"
+      disabled={!item.deletable}
+      onChange={() => onToggle(item.id)}
+      type="checkbox"
+    />
+  )
+  return item.deletable ? box : <span className="row-select-wrap" data-tooltip={NOT_DELETABLE_TOOLTIP}>{box}</span>
+}
+
+type RowSelection = { onToggle: (id: string) => void; onToggleAll: () => void; selectedIds: string[] } | null
+
+function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRetry, onSelect, selection }: { deliveryStatuses: Record<string, ReportDeliveryStatus>; items: SubmissionListItem[]; onDeliveryChange: (status: ReportDeliveryStatus) => void; onReportRetry: () => Promise<void>; onSelect: (id: string) => void; selection: RowSelection }) {
+  const deletableIds = items.filter((item) => item.deletable).map((item) => item.id)
+  const allSelected = Boolean(selection && deletableIds.length && deletableIds.every((id) => selection.selectedIds.includes(id)))
   return (
     <>
       <div className="table-wrap desktop-table">
@@ -281,7 +302,16 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
           <table>
           <thead>
             <tr>
-              <th>Người gửi</th>
+              <th>
+                {selection ? (
+                  <span className="row-select-head">
+                    <span className="row-select-wrap" data-tooltip={deletableIds.length ? 'Chọn tất cả lượt gửi đang chờ tạo báo cáo ở trang này' : 'Trang này không có lượt gửi nào xóa được'}>
+                      <input aria-label="Chọn tất cả lượt gửi xóa được ở trang này" checked={allSelected} className="row-select-box" disabled={!deletableIds.length} onChange={selection.onToggleAll} type="checkbox" />
+                    </span>
+                    Người gửi
+                  </span>
+                ) : 'Người gửi'}
+              </th>
               <th>Trạng thái</th>
               <th>Số câu</th>
               <th>Kết quả</th>
@@ -292,9 +322,10 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={item.id}>
+              <tr className={selection?.selectedIds.includes(item.id) ? 'is-selected' : undefined} key={item.id}>
                 <td>
-                  <div className="person-cell">
+                  <div className={selection ? 'person-cell has-select' : 'person-cell'}>
+                    {selection ? <RowSelectBox checked={selection.selectedIds.includes(item.id)} item={item} onToggle={selection.onToggle} /> : null}
                     <strong>{item.fullName}</strong>
                     <span className="email-single-line-wrap" data-tooltip={item.email}><span className="email-single-line">{item.email}</span></span>
                     <span>{item.phone ?? 'Chưa cung cấp số điện thoại'}</span>
@@ -343,6 +374,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
             transition={{ delay: Math.min(index * 0.02, 0.18), duration: 0.18 }}
           >
             <div className="submission-card-head">
+              {selection ? <RowSelectBox checked={selection.selectedIds.includes(item.id)} item={item} onToggle={selection.onToggle} /> : null}
               <div>
                 <strong>{item.fullName}</strong>
                 <span>{item.position}</span>
@@ -538,6 +570,11 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
   const [campaignDialogOpen, setCampaignDialogOpen] = useState(false)
   const [campaignBusy, setCampaignBusy] = useState(false)
   const [campaignError, setCampaignError] = useState('')
+  // Super admins: submissions ticked for deletion (only rows whose report is still waiting).
+  const [selectedForDeletion, setSelectedForDeletion] = useState<string[]>([])
+  const [deleteDialogIds, setDeleteDialogIds] = useState<string[] | null>(null)
+  const [deleteNotice, setDeleteNotice] = useState('')
+  const canDelete = isSuperadmin(user?.role)
   const itemsRef = useRef(items)
   const statsRef = useRef(stats)
 
@@ -629,6 +666,23 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
   useEffect(() => {
     void loadStats()
   }, [loadStats])
+
+  // Keep only ticks on rows that are still shown and still deletable.
+  useEffect(() => {
+    setSelectedForDeletion((current) => {
+      const next = current.filter((id) => items.some((item) => item.id === id && item.deletable))
+      return next.length === current.length ? current : next
+    })
+  }, [items])
+
+  const selection: RowSelection = canDelete ? {
+    onToggle: (id) => setSelectedForDeletion((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id]),
+    onToggleAll: () => {
+      const deletableIds = items.filter((item) => item.deletable).map((item) => item.id)
+      setSelectedForDeletion((current) => deletableIds.every((id) => current.includes(id)) ? current.filter((id) => !deletableIds.includes(id)) : [...new Set([...current, ...deletableIds])])
+    },
+    selectedIds: selectedForDeletion,
+  } : null
 
   useEffect(() => {
     void loadPage()
@@ -813,15 +867,8 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
         {campaignError && !campaignDialogOpen ? <p className="report-delivery-error report-delivery-inline-error">{campaignError}</p> : null}
         {deliveryStatusError ? <p className="report-delivery-error report-delivery-inline-error">{deliveryStatusError} Vui lòng bấm Tải lại.</p> : null}
 
-        {/* entry=qr makes the landing open the survey directly and start a fresh session. */}
-        <PublicLinkBar
-          copiedMessage="Đã sao chép link khảo sát."
-          openLabel="Mở khảo sát"
-          qrFileName="ma-qr-khao-sat.png"
-          title="Link làm khảo sát"
-          url={getLandingUrl('/survey?entry=qr')}
-        />
-
+        {/* The general survey link (no invitation source) is no longer offered here:
+            links and QR codes are handed out per source in the "Nguồn mời" tab. */}
         <div className="filter-bar submissions-filter-bar">
           <div className="search-box">
             <Search aria-hidden="true" size={18} />
@@ -840,9 +887,29 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
           <CustomSelect label="Nguồn mời" onChange={(next) => { onSourceFilterChange(next); setPage(1); setPageCursors([null]) }} options={sourceOptions} value={sourceFilter} />
         </div>
 
+        {deleteNotice ? (
+          <p aria-live="polite" className="survey-sources-notice submissions-delete-notice">
+            <span>{deleteNotice}</span>
+            <button aria-label="Ẩn thông báo" className="icon-button" onClick={() => setDeleteNotice('')} type="button"><X aria-hidden="true" size={15} /></button>
+          </p>
+        ) : null}
+
+        {canDelete && selectedForDeletion.length ? (
+          <div className="submissions-selection-bar">
+            <span>Đã chọn <strong>{selectedForDeletion.length}</strong> lượt gửi đang chờ tạo báo cáo</span>
+            <div>
+              <button className="secondary-button" onClick={() => setSelectedForDeletion([])} type="button">Bỏ chọn</button>
+              <button className="danger-button" onClick={() => setDeleteDialogIds(selectedForDeletion)} type="button">
+                <Trash2 aria-hidden="true" size={16} />
+                <span>Xóa {selectedForDeletion.length} lượt gửi</span>
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {isLoading ? <TableSkeleton /> : null}
         {!isLoading && (error || items.length === 0) ? <EmptyState error={error} onRetry={() => void loadPage()} /> : null}
-        {!isLoading && !error && items.length > 0 ? <SubmissionTable deliveryStatuses={deliveryStatuses} items={items} onDeliveryChange={handleDeliveryChange} onReportRetry={handleReportRetry} onSelect={setSelectedId} /> : null}
+        {!isLoading && !error && items.length > 0 ? <SubmissionTable deliveryStatuses={deliveryStatuses} items={items} onDeliveryChange={handleDeliveryChange} onReportRetry={handleReportRetry} onSelect={setSelectedId} selection={selection} /> : null}
 
         {!isLoading && !error && items.length > 0 ? (
           <TablePagination
@@ -861,6 +928,19 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
           />
         ) : null}
       </section>
+      {deleteDialogIds ? (
+        <SubmissionDeleteDialog
+          ids={deleteDialogIds}
+          onClose={() => setDeleteDialogIds(null)}
+          onDeleted={(count) => {
+            setDeleteDialogIds(null)
+            setSelectedForDeletion([])
+            setDeleteNotice(`Đã xóa vĩnh viễn ${count} lượt gửi.`)
+            void loadStats()
+            void loadPage()
+          }}
+        />
+      ) : null}
       <ReportDeliveryCampaignDialog busy={campaignBusy} campaign={campaign} error={campaignError} onClose={() => setCampaignDialogOpen(false)} onConfirm={() => void confirmCampaign()} open={campaignDialogOpen} />
       <SubmissionDetailDrawer
         detail={detail}
