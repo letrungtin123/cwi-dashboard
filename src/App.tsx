@@ -7,9 +7,14 @@ import { useAuth } from './features/auth/AuthProvider'
 import { LoginPage } from './features/auth/LoginPage'
 import { RoundtablePage } from './features/roundtable/RoundtablePage'
 import { SubmissionsPage } from './features/submissions/SubmissionsPage'
+import { SurveyModuleTabs, type SurveyModuleTab } from './features/surveySources/SurveyModuleTabs'
+import { SurveySourcesPage } from './features/surveySources/SurveySourcesPage'
 import { WebinarPage } from './features/webinar/WebinarPage'
 import { QuarterlyReportDownloadsPage } from './features/quarterlyReports/QuarterlyReportDownloadsPage'
 import { QuarterlyReportsPage } from './features/quarterlyReports/QuarterlyReportsPage'
+import { canManageContent, isSuperadmin } from './lib/roles'
+import { AdminUsersPage } from './features/adminUsers/AdminUsersPage'
+import { ChangePasswordDialog } from './features/auth/ChangePasswordDialog'
 
 const sectionCopy: Record<DashboardSection, { title: string }> = {
   roundtable: {
@@ -27,11 +32,18 @@ const sectionCopy: Record<DashboardSection, { title: string }> = {
   submissions: {
     title: 'Lượt gửi khảo sát',
   },
+  adminUsers: {
+    title: 'Quản lý quản trị viên',
+  },
 }
 
 export default function App() {
   const { logout, retrySession, status, user } = useAuth()
   const [activeSection, setActiveSection] = useState<DashboardSection>('submissions')
+  const [surveyTab, setSurveyTab] = useState<SurveyModuleTab>('submissions')
+  // 'all', 'none' or a source id; kept here so "Xem danh sách" on a source opens the filtered list.
+  const [submissionSourceFilter, setSubmissionSourceFilter] = useState('all')
+  const [changingPassword, setChangingPassword] = useState(false)
 
   if (status === 'checking') {
     return (
@@ -74,18 +86,25 @@ export default function App() {
   }
 
   const currentCopy = sectionCopy[activeSection]
+  const title = activeSection === 'submissions' && surveyTab === 'sources' ? 'Nguồn mời khảo sát' : currentCopy.title
+  const surveyTabs = <SurveyModuleTabs active={surveyTab} onChange={setSurveyTab} />
+  const surveyPage = surveyTab === 'sources'
+    ? <SurveySourcesPage canEdit={canManageContent(user.role)} onShowSubmissions={(sourceFilter) => { setSubmissionSourceFilter(sourceFilter); setSurveyTab('submissions') }} tabs={surveyTabs} />
+    : <SubmissionsPage onSourceFilterChange={setSubmissionSourceFilter} sourceFilter={submissionSourceFilter} tabs={surveyTabs} />
 
   return (
     <>
       <DashboardShell
         activeSection={activeSection}
+        onChangePassword={() => setChangingPassword(true)}
         onLogout={logout}
         onSectionChange={setActiveSection}
-        title={currentCopy.title}
+        title={title}
         user={user}
       >
-        {activeSection === 'roundtable' ? <RoundtablePage /> : activeSection === 'webinar' ? <WebinarPage /> : activeSection === 'quarterlyReports' ? <QuarterlyReportsPage /> : activeSection === 'quarterlyReportDownloads' ? <QuarterlyReportDownloadsPage /> : <SubmissionsPage />}
+        {activeSection === 'adminUsers' && isSuperadmin(user.role) ? <AdminUsersPage /> : activeSection === 'roundtable' ? <RoundtablePage /> : activeSection === 'webinar' ? <WebinarPage /> : activeSection === 'quarterlyReports' ? <QuarterlyReportsPage /> : activeSection === 'quarterlyReportDownloads' ? <QuarterlyReportDownloadsPage /> : surveyPage}
       </DashboardShell>
+      {changingPassword ? <ChangePasswordDialog onClose={() => setChangingPassword(false)} /> : null}
       <TooltipLayer />
     </>
   )

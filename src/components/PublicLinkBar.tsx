@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import QRCode from 'qrcode'
 import { Copy, ExternalLink, Link2, QrCode } from 'lucide-react'
+import { copyText, downloadQrCode } from '@/lib/shareLink'
 
 type PublicLinkBarProps = {
   copiedMessage: string
@@ -16,18 +16,7 @@ export function PublicLinkBar({ copiedMessage, openLabel, qrFileName, title, url
 
   const copyUrl = async () => {
     try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url)
-      } else {
-        const textArea = document.createElement('textarea')
-        textArea.value = url
-        textArea.style.cssText = 'left:-9999px;position:fixed;top:0'
-        document.body.append(textArea)
-        textArea.select()
-        const copied = document.execCommand('copy')
-        textArea.remove()
-        if (!copied) throw new Error('copy_failed')
-      }
+      await copyText(url)
       setActionStatus(copiedMessage)
     } catch {
       setActionStatus('Không thể sao chép link trên trình duyệt này.')
@@ -37,18 +26,7 @@ export function PublicLinkBar({ copiedMessage, openLabel, qrFileName, title, url
   const downloadQr = async () => {
     setIsGeneratingQr(true)
     try {
-      const dataUrl = await QRCode.toDataURL(url, {
-        color: { dark: '#003d7c', light: '#ffffffff' },
-        errorCorrectionLevel: 'M',
-        margin: 2,
-        width: 1024,
-      })
-      const anchor = document.createElement('a')
-      anchor.download = qrFileName
-      anchor.href = dataUrl
-      document.body.append(anchor)
-      anchor.click()
-      anchor.remove()
+      await downloadQrCode(url, qrFileName)
       setActionStatus('Đã tải mã QR.')
     } catch {
       setActionStatus('Không thể tạo mã QR. Vui lòng thử lại.')

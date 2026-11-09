@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
   Briefcase,
   Building2,
   CalendarDays,
-  Check,
   CheckCircle2,
-  ChevronDown,
   ChevronRight,
   CircleAlert,
   Download,
@@ -14,6 +12,7 @@ import {
   FileText,
   Mail,
   Phone,
+  QrCode,
   RefreshCw,
   Search,
   UsersRound,
@@ -26,16 +25,17 @@ import { ReportDeliveryCampaignDialog } from './ReportDeliveryCampaignDialog'
 import { ReportDeliveryFileStatus, ReportDeliveryTableCell } from './ReportDeliveryControls'
 import { pausedReportTooltip } from './reportGenerationLabels'
 import { ReportGenerationSettings } from './ReportGenerationSettings'
+import { CustomSelect, type SelectOption } from '@/components/CustomSelect'
 import { TablePagination } from '@/components/TablePagination'
-import { apiUrl, confirmReportDeliveryCampaign, getReportDeliveryCampaign, getReportDeliveryStatuses, getSubmissionDetail, getSubmissionStats, listSubmissionsPage, previewReportDeliveryCampaign } from '@/lib/api'
+import { apiUrl, confirmReportDeliveryCampaign, getReportDeliveryCampaign, getReportDeliveryStatuses, getSubmissionDetail, getSubmissionStats, listSubmissionsPage, listSurveySources, previewReportDeliveryCampaign } from '@/lib/api'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { formatDateTime, formatNumber, valueToText } from '@/lib/format'
-import type { ExportFilters, PrivacyConsent, ReportDeliveryCampaign, ReportDeliveryStatus, ReportStatus, ReportSummary, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus, SurveyLanguage } from '@/types'
+import { canManageContent } from '@/lib/roles'
+import type { ExportFilters, PrivacyConsent, ReportDeliveryCampaign, ReportDeliveryStatus, ReportStatus, ReportSummary, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus, SurveyLanguage, SurveySource } from '@/types'
 
 type StatusOption = 'all' | SubmissionStatus
 type ReportStatusOption = 'all' | ReportStatus
 type EmailStatusOption = 'all' | 'failed'
-type SelectOption<T extends string> = { description?: string; label: string; value: T }
 type PageCursor = { before: string; beforeId: string } | null
 
 const defaultPageSize = 10
@@ -96,7 +96,20 @@ function buildSurveyVersionOptions(stats: SubmissionStats | null): Array<SelectO
   ]
 }
 
-function buildFilters(search: string, status: StatusOption, reportStatus: ReportStatusOption, emailStatus: EmailStatusOption, surveyVersion: string, limit: number, cursor: PageCursor): SubmissionFilters {
+// 'none' lists submissions that came without a source link.
+function buildSourceOptions(sources: SurveySource[]): Array<SelectOption<string>> {
+  return [
+    { description: 'Không lọc theo nguồn mời', label: 'Tất cả nguồn', value: 'all' },
+    { description: 'Nộp qua link chung hoặc vào thẳng website', label: 'Không có nguồn mời', value: 'none' },
+    ...sources.map((source) => ({
+      description: source.isActive ? `${formatNumber(source.submissionCount)} bài nộp` : `Đã ngưng · ${formatNumber(source.submissionCount)} bài nộp`,
+      label: source.name,
+      value: source.id,
+    })),
+  ]
+}
+
+function buildFilters(search: string, status: StatusOption, reportStatus: ReportStatusOption, emailStatus: EmailStatusOption, surveyVersion: string, sourceFilter: string, limit: number, cursor: PageCursor): SubmissionFilters {
   return {
     before: cursor?.before,
     beforeId: cursor?.beforeId,
@@ -104,6 +117,7 @@ function buildFilters(search: string, status: StatusOption, reportStatus: Report
     reportStatus: reportStatus === 'all' ? undefined : reportStatus,
     emailStatus: emailStatus === 'all' ? undefined : emailStatus,
     search: search || undefined,
+    sourceId: sourceFilter === 'all' ? undefined : sourceFilter,
     status: status === 'all' ? undefined : status,
     surveyVersion: surveyVersion === 'all' ? undefined : surveyVersion,
   }
@@ -164,82 +178,6 @@ function StatTile({ icon, label, tooltip, value }: { icon: ReactNode; label: str
         <strong>{value}</strong>
       </div>
     </article>
-  )
-}
-
-function CustomSelect<T extends string>({ label, onChange, options, value }: { label: string; onChange: (value: T) => void; options: Array<SelectOption<T>>; value: T }) {
-  const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-  const selected = options.find((option) => option.value === value) ?? options[0]
-
-  useEffect(() => {
-    if (!open) return
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
-    }
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [open])
-
-  return (
-    <div className="custom-select" ref={rootRef}>
-      <button
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        className={`custom-select-trigger${open ? ' is-open' : ''}`}
-        onClick={() => setOpen((current) => !current)}
-        type="button"
-      >
-        <span className="custom-select-label">{label}</span>
-        <span className="custom-select-value">{selected.label}</span>
-        <ChevronDown aria-hidden="true" className="custom-select-chevron" size={17} />
-      </button>
-
-      <AnimatePresence>
-        {open ? (
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            className="custom-select-menu"
-            exit={{ opacity: 0, y: -6 }}
-            initial={{ opacity: 0, y: -6 }}
-            role="listbox"
-            transition={{ duration: 0.14, ease: 'easeOut' }}
-          >
-            {options.map((option) => {
-              const isSelected = option.value === value
-              return (
-                <button
-                  aria-selected={isSelected}
-                  className={`custom-select-option${isSelected ? ' is-selected' : ''}`}
-                  key={option.value}
-                  onClick={() => {
-                    onChange(option.value)
-                    setOpen(false)
-                  }}
-                  role="option"
-                  type="button"
-                >
-                  <span className="custom-select-option-text">
-                    <strong>{option.label}</strong>
-                    {option.description ? <small>{option.description}</small> : null}
-                  </span>
-                  {isSelected ? <Check aria-hidden="true" size={16} /> : null}
-                </button>
-              )
-            })}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
   )
 }
 
@@ -361,6 +299,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
                     <span className="email-single-line-wrap" data-tooltip={item.email}><span className="email-single-line">{item.email}</span></span>
                     <span>{item.phone ?? 'Chưa cung cấp số điện thoại'}</span>
                     <em>{item.position}</em>
+                    {item.source ? <span className="submission-source-line"><QrCode aria-hidden="true" size={12} />{item.source.name}</span> : null}
                   </div>
                 </td>
                 <td>
@@ -419,6 +358,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
             </div>
             <p className="email-single-line-wrap" data-tooltip={item.email}><span className="email-single-line">{item.email}</span></p>
             <p>{item.phone ?? 'Chưa cung cấp số điện thoại'}</p>
+            {item.source ? <p className="submission-source-line"><QrCode aria-hidden="true" size={12} />{item.source.name}</p> : null}
             <ReportDownloadLink report={item.report} />
             <div className="submission-card-result">
               <span>Kết quả</span>
@@ -527,6 +467,10 @@ function SubmissionDetailDrawer({
                 <CheckCircle2 aria-hidden="true" size={16} />
                 <span>{privacyLabels[detail.privacyConsent]}</span>
               </div>
+              <div className="detail-source">
+                <QrCode aria-hidden="true" size={16} />
+                <span>Nguồn mời: <strong>{detail.source ? detail.source.name : 'Không có'}</strong>{detail.source && !detail.source.isActive ? ' (đã ngưng)' : ''}</span>
+              </div>
             </section>
 
             {detail.roundtableRegistration ? (
@@ -566,8 +510,9 @@ function SubmissionDetailDrawer({
   )
 }
 
-export function SubmissionsPage() {
+export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { onSourceFilterChange: (value: string) => void; sourceFilter: string; tabs: ReactNode }) {
   const { user } = useAuth()
+  const [sources, setSources] = useState<SurveySource[]>([])
   const [draftSearch, setDraftSearch] = useState('')
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<StatusOption>('all')
@@ -614,14 +559,22 @@ export function SubmissionsPage() {
   }, [draftSearch])
 
   const cursor = pageCursors[page - 1] ?? null
-  const filters = useMemo(() => buildFilters(search, status, reportStatus, emailStatus, surveyVersion, pageSize, cursor), [cursor, emailStatus, pageSize, reportStatus, search, status, surveyVersion])
+  const filters = useMemo(() => buildFilters(search, status, reportStatus, emailStatus, surveyVersion, sourceFilter, pageSize, cursor), [cursor, emailStatus, pageSize, reportStatus, search, sourceFilter, status, surveyVersion])
+  const sourceOptions = useMemo(() => buildSourceOptions(sources), [sources])
   const statsSurveyVersion = surveyVersion === 'all' ? undefined : surveyVersion
   const surveyVersionOptions = useMemo(() => buildSurveyVersionOptions(stats), [stats])
   const exportFilters = useMemo<ExportFilters>(() => ({
     search: search || undefined,
+    sourceId: sourceFilter === 'all' ? undefined : sourceFilter,
     status: status === 'all' ? undefined : status,
     surveyVersion: statsSurveyVersion,
-  }), [search, status, statsSurveyVersion])
+  }), [search, sourceFilter, status, statsSurveyVersion])
+
+  useEffect(() => {
+    listSurveySources().then((result) => setSources(result.items)).catch(() => {
+      // Without the list the filter still offers "Tất cả" and "Không có nguồn mời".
+    })
+  }, [])
 
   const loadStats = useCallback(async (options: { silent?: boolean } = {}) => {
     try {
@@ -827,6 +780,7 @@ export function SubmissionsPage() {
   }
   return (
     <main className="dashboard-main">
+      {tabs}
       {isLoading && !stats ? (
         <StatsSkeleton />
       ) : (
@@ -838,7 +792,7 @@ export function SubmissionsPage() {
         </section>
       )}
 
-      <ReportGenerationSettings canEdit={user?.role === 'admin'} />
+      <ReportGenerationSettings canEdit={canManageContent(user?.role)} />
 
       <section aria-busy={isLoading} className="content-surface" data-loading={isLoading}>
         <div className="surface-head">
@@ -847,8 +801,8 @@ export function SubmissionsPage() {
             <h2>Lượt gửi khảo sát</h2>
           </div>
           <div className="surface-actions">
-            {user?.role === 'admin' ? <ExportDataButton dataset="submissions" filters={exportFilters} /> : null}
-            {user?.role === 'admin' ? <button className="primary-button" disabled={campaignBusy} onClick={() => void openCampaignDialog()} type="button"><Mail aria-hidden="true" size={16} /><span>{campaignBusy ? 'Đang chuẩn bị...' : 'Gửi email trả kết quả'}</span></button> : null}
+            {canManageContent(user?.role) ? <ExportDataButton dataset="submissions" filters={exportFilters} /> : null}
+            {canManageContent(user?.role) ? <button className="primary-button" disabled={campaignBusy} onClick={() => void openCampaignDialog()} type="button"><Mail aria-hidden="true" size={16} /><span>{campaignBusy ? 'Đang chuẩn bị...' : 'Gửi email trả kết quả'}</span></button> : null}
             <button className="secondary-button" onClick={() => { setPage(1); setPageCursors([null]); void loadStats(); if (page === 1) void loadPage() }} type="button">
               <RefreshCw aria-hidden="true" size={16} />
               <span>Tải lại</span>
@@ -883,6 +837,7 @@ export function SubmissionsPage() {
           <CustomSelect label="Trạng thái" onChange={(next) => { setStatus(next); setPage(1); setPageCursors([null]) }} options={statusOptions} value={status} />
           <CustomSelect label="Báo cáo" onChange={(next) => { setReportStatus(next); setPage(1); setPageCursors([null]) }} options={reportStatusOptions} value={reportStatus} />
           <CustomSelect label="Email" onChange={(next) => { setEmailStatus(next); setPage(1); setPageCursors([null]) }} options={emailStatusOptions} value={emailStatus} />
+          <CustomSelect label="Nguồn mời" onChange={(next) => { onSourceFilterChange(next); setPage(1); setPageCursors([null]) }} options={sourceOptions} value={sourceFilter} />
         </div>
 
         {isLoading ? <TableSkeleton /> : null}

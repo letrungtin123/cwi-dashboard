@@ -4932,3 +4932,660 @@ tbody tr:hover {
     margin-left: 46px;
   }
 }
+
+/* Survey module tabs: "Lượt gửi khảo sát" / "Nguồn mời" */
+.survey-module-tabs {
+  background: #e9eef6;
+  border-radius: 10px;
+  display: inline-flex;
+  gap: 4px;
+  justify-self: start;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 4px;
+}
+
+.survey-module-tab {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: #44546a;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+.survey-module-tab:hover {
+  color: var(--cwi-blue-dark);
+}
+
+.survey-module-tab.is-active {
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(17, 35, 61, 0.12);
+  color: var(--cwi-blue);
+}
+
+/* Submissions list: five selects next to the search box */
+@media (min-width: 1181px) {
+  .submissions-filter-bar {
+    grid-template-columns: minmax(220px, 1fr) repeat(5, minmax(150px, 200px));
+  }
+}
+
+/* Source names are long: open the last select (Nguồn mời) wider, aligned to its right edge. */
+.submissions-filter-bar > .custom-select:last-child .custom-select-menu {
+  left: auto;
+  max-width: calc(100vw - 32px);
+  width: 300px;
+}
+
+.submission-source-line {
+  align-items: center;
+  color: #1d5fbf;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 5px;
+}
+
+.submission-source-line svg {
+  flex: 0 0 auto;
+}
+
+.detail-grid .detail-source {
+  grid-column: 1 / -1;
+}
+
+.detail-source strong {
+  color: var(--cwi-navy);
+  font-weight: 800;
+}
+
+/* Survey sources page */
+.survey-sources-intro {
+  border-bottom: 1px solid var(--line-soft);
+  color: #44546a;
+  display: grid;
+  font-size: 14px;
+  gap: 6px;
+  line-height: 1.55;
+  padding: 14px 20px;
+}
+
+.survey-sources-intro p {
+  margin: 0;
+}
+
+.survey-sources-intro strong {
+  color: var(--cwi-navy);
+}
+
+.survey-sources-filter {
+  grid-template-columns: minmax(200px, 280px);
+}
+
+.survey-sources-notice {
+  align-items: center;
+  background: #eef8f1;
+  border: 1px solid #b9e2c6;
+  border-radius: 8px;
+  color: #17633a;
+  display: flex;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 10px;
+  justify-content: space-between;
+  margin: 14px 20px 0;
+  padding: 6px 6px 6px 14px;
+}
+
+.survey-sources-notice .icon-button {
+  height: 30px;
+  min-height: 30px;
+  width: 30px;
+}
+
+.survey-sources-list {
+  display: grid;
+  padding: 4px 20px 18px;
+}
+
+.survey-source-row {
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(180px, 1.1fr) minmax(240px, 1.6fr) 110px 140px 110px 176px;
+  padding: 14px 0;
+}
+
+.survey-source-header {
+  color: #5b6b80;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+  padding: 12px 0 10px;
+  text-transform: uppercase;
+}
+
+.survey-source-name {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.survey-source-name strong {
+  color: var(--cwi-navy);
+  font-size: 15px;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.survey-source-name span {
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.survey-source-link {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.survey-source-link a {
+  color: #1d5fbf;
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.survey-source-link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.survey-source-link-actions .mini-link-button {
+  cursor: pointer;
+}
+
+.survey-source-count {
+  display: grid;
+  gap: 5px;
+  justify-items: start;
+}
+
+.survey-source-count strong {
+  color: var(--cwi-navy);
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.survey-source-view {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: #1d5fbf;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 4px;
+  padding: 0;
+}
+
+.survey-source-view:hover {
+  text-decoration: underline;
+}
+
+.survey-source-last {
+  color: #44546a;
+  font-size: 13px;
+}
+
+.survey-source-mobile-label {
+  display: none;
+}
+
+.survey-source-status {
+  background: #eef1f5;
+  border-radius: 999px;
+  color: #5b6b80;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 850;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.survey-source-status.is-active {
+  background: #e7f6ec;
+  color: #17733e;
+}
+
+.survey-source-row.is-inactive .survey-source-name strong,
+.survey-source-row.is-inactive .survey-source-count strong {
+  color: #7a8799;
+}
+
+.survey-source-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.survey-source-delete:hover:not(:disabled) {
+  border-color: #f3b4b8;
+  color: var(--cwi-red-dark);
+}
+
+/* Negative margin keeps its columns in line with the rows above despite the padding. */
+.survey-source-unattributed {
+  background: #f8fafc;
+  border-bottom: 0;
+  border-radius: 8px;
+  margin: 10px -12px 0;
+  padding: 14px 12px;
+}
+
+.survey-sources-empty {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0;
+  padding: 18px 0;
+}
+
+.survey-sources > .survey-sources-empty {
+  padding: 18px 20px;
+}
+
+/* Add / edit source dialog */
+.survey-source-form {
+  gap: 16px;
+}
+
+.survey-source-hint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.survey-source-hint.is-error {
+  color: var(--cwi-red-dark);
+}
+
+.survey-source-note-field textarea {
+  background: #fbfdff;
+  border: 1px solid #c4d8ef;
+  border-radius: 8px;
+  color: #0b1e39;
+  font: inherit;
+  font-size: 14px;
+  min-height: 76px;
+  padding: 10px 12px;
+  resize: vertical;
+  width: 100%;
+}
+
+.survey-source-note-field textarea:focus {
+  background: #fff;
+  border-color: #2087ce;
+  box-shadow: 0 0 0 3px rgba(32, 135, 206, 0.12);
+  outline: none;
+}
+
+.survey-source-link-preview {
+  background: #f7f9fc;
+  border: 1px dashed #c4d8ef;
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+}
+
+.survey-source-link-preview span {
+  color: #17416f;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.survey-source-link-preview code {
+  color: #1d5fbf;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.danger-button {
+  align-items: center;
+  background: linear-gradient(135deg, var(--cwi-red) 0%, var(--cwi-red-dark) 100%);
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-weight: 900;
+  gap: 8px;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 16px;
+}
+
+.danger-button:disabled,
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 1100px) {
+  .survey-source-header {
+    display: none;
+  }
+
+  .survey-source-row {
+    gap: 10px 14px;
+    grid-template-areas:
+      "name state"
+      "link link"
+      "count count"
+      "last last"
+      "actions actions";
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .survey-source-row > div:empty {
+    display: none;
+  }
+
+  .survey-source-name { grid-area: name; }
+  .survey-source-state { grid-area: state; justify-self: end; }
+  .survey-source-link { grid-area: link; }
+  .survey-source-count { grid-area: count; }
+  .survey-source-last { grid-area: last; }
+  .survey-source-actions { grid-area: actions; justify-content: flex-start; }
+  .survey-source-actions:empty { display: none; }
+
+  .survey-source-mobile-label {
+    display: inline;
+  }
+
+  .survey-sources-list {
+    padding: 4px 14px 14px;
+  }
+}
+/* Sidebar: "Đổi mật khẩu" above "Đăng xuất" */
+.sidebar-footer-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.logout-button.sidebar-password-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Survey sources: who created / changed it */
+.survey-source-name .survey-source-meta {
+  color: #7a8799;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.survey-source-hint svg {
+  vertical-align: -2px;
+}
+
+/* Source history dialog */
+.survey-source-history .report-modal-body {
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+}
+
+.history-list {
+  display: grid;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.history-list li {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 26px minmax(0, 1fr);
+  padding: 12px 0;
+  position: relative;
+}
+
+.history-list li + li {
+  border-top: 1px solid var(--line-soft);
+}
+
+.history-dot {
+  align-items: center;
+  background: #e9f1fb;
+  border-radius: 999px;
+  color: #1d5fbf;
+  display: inline-flex;
+  height: 26px;
+  justify-content: center;
+  width: 26px;
+}
+
+.history-list strong {
+  color: var(--cwi-navy);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.history-meta {
+  color: #7a8799;
+  font-size: 12px;
+  margin: 2px 0 4px;
+}
+
+.history-line {
+  color: #44546a;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Admin accounts page */
+.admin-users-roles p {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-role-badge {
+  background: #eef1f5;
+  border-radius: 999px;
+  color: #44546a;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 850;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.admin-role-badge.is-superadmin {
+  background: #fdecec;
+  color: #b4232a;
+}
+
+.admin-role-badge.is-admin {
+  background: #e9f1fb;
+  color: #1d5fbf;
+}
+
+.admin-user-row {
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(200px, 1.4fr) 130px 130px 150px minmax(160px, 1fr) 132px;
+  padding: 14px 0;
+}
+
+.admin-user-row.is-inactive .admin-user-name strong {
+  color: #7a8799;
+}
+
+.admin-user-name em {
+  color: #1d5fbf;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.admin-user-created small {
+  color: #7a8799;
+  display: block;
+  font-size: 12px;
+}
+
+.temporary-password-box {
+  align-items: end;
+  background: #f7f9fc;
+  border: 1px dashed #c4d8ef;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.temporary-password-box div {
+  display: grid;
+  gap: 4px;
+}
+
+.temporary-password-box span {
+  color: #17416f;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.temporary-password-box strong {
+  color: var(--cwi-navy);
+  overflow-wrap: anywhere;
+}
+
+.temporary-password-box code {
+  color: var(--cwi-navy);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  overflow-wrap: anywhere;
+}
+
+.temporary-password-box .secondary-button {
+  justify-self: start;
+}
+
+.password-change-done {
+  align-items: flex-start;
+  color: #17633a;
+  display: flex;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 10px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.password-change-done svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.password-visibility-toggle {
+  cursor: pointer;
+  justify-self: start;
+}
+
+@media (max-width: 1100px) {
+  .admin-user-row {
+    gap: 10px 14px;
+    grid-template-areas:
+      "name state"
+      "role role"
+      "login login"
+      "created created"
+      "actions actions";
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .admin-user-row.survey-source-header {
+    display: none;
+  }
+
+  .admin-user-name { grid-area: name; }
+  .admin-user-state { grid-area: state; justify-self: end; }
+  .admin-user-role { grid-area: role; }
+  .admin-user-login { grid-area: login; text-align: left; }
+  .admin-user-created { grid-area: created; text-align: left; }
+  .admin-user-created small { display: inline; margin-left: 6px; }
+  .admin-user-row .survey-source-actions { grid-area: actions; justify-content: flex-start; }
+}
+/* Role picker in the add / edit account dialog */
+.role-options {
+  display: grid;
+  gap: 8px;
+}
+
+.role-option {
+  align-items: flex-start;
+  background: #fbfdff;
+  border: 1px solid #c4d8ef;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.role-option.is-selected {
+  background: #eef5fd;
+  border-color: #2087ce;
+  box-shadow: 0 0 0 3px rgba(32, 135, 206, 0.12);
+}
+
+.roundtable-event-field .role-option input {
+  accent-color: #1d5fbf;
+  flex: 0 0 auto;
+  height: 16px;
+  margin: 2px 0 0;
+  min-height: 0;
+  padding: 0;
+  width: 16px;
+}
+
+.role-option span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.role-option strong {
+  color: var(--cwi-navy);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.role-option small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}

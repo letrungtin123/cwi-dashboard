@@ -1,4 +1,10 @@
-export type AdminRole = 'admin' | 'viewer'
+// superadmin: everything an admin can do, plus managing admin accounts.
+export type AdminRole = 'superadmin' | 'admin' | 'viewer'
+
+export type AdminPerson = {
+  email: string | null
+  name: string | null
+}
 
 export type AdminUser = {
   displayName: string | null
@@ -30,6 +36,14 @@ export type ReportSummary = {
   updatedAt: string | null
 }
 
+// Invitation source whose survey link the respondent used.
+export type SubmissionSource = {
+  code: string
+  id: string
+  isActive: boolean
+  name: string
+}
+
 export type SubmissionListItem = {
   answersCount: number
   companyName: string | null
@@ -45,6 +59,8 @@ export type SubmissionListItem = {
   report: ReportSummary
   roundtableRegistered: boolean
   phone: string | null
+  // Null when the survey was opened without a source link.
+  source: SubmissionSource | null
   statusNote: string
   submittedAt: string
   submissionStatus: SubmissionStatus
@@ -97,6 +113,8 @@ export type SubmissionFilters = {
   emailStatus?: 'failed'
   roundtable?: 'true' | 'false'
   search?: string
+  // A source id, or 'none' for submissions without a source link.
+  sourceId?: string
   status?: SubmissionStatus
   surveyVersion?: string
 }
@@ -174,6 +192,54 @@ export type ReportGenerationSettings = {
   updatedByEmail: string | null
 }
 
+export type SurveySource = {
+  code: string
+  createdAt: string
+  createdBy: AdminPerson | null
+  id: string
+  isActive: boolean
+  lastSubmittedAt: string | null
+  name: string
+  note: string | null
+  // In the selected survey quarter (every quarter when none is selected).
+  submissionCount: number
+  // In every quarter; a source can only be deleted while this is 0.
+  totalSubmissionCount: number
+  updatedAt: string
+  updatedBy: AdminPerson | null
+}
+
+export type SurveySourceList = {
+  items: SurveySource[]
+  unattributedSubmissions: number
+}
+
+// One change from the admin audit log (newest first).
+export type AuditEntry = {
+  action: string
+  actor: AdminPerson
+  createdAt: string
+  id: string
+  metadata: Record<string, unknown>
+}
+
+export type AdminAccount = {
+  createdAt: string
+  createdBy: AdminPerson | null
+  displayName: string | null
+  email: string
+  id: string
+  isActive: boolean
+  lastLoginAt: string | null
+  role: AdminRole
+}
+
+export type AdminAccountWithPassword = {
+  account: AdminAccount
+  // Shown once; the system does not keep it.
+  temporaryPassword: string
+}
+
 export type WebinarLinkStatus = RoundtableLinkStatus
 export type WebinarSubmissionSummary = RoundtableSubmissionSummary
 export type WebinarRegistrationListItem = RoundtableRegistrationListItem
@@ -227,6 +293,7 @@ export type ExportFilters = {
   quarter?: string
   roundtableRegistered?: boolean
   search?: string
+  sourceId?: string
   status?: SubmissionStatus
   surveyVersion?: string
 }

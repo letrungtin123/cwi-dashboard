@@ -19,10 +19,13 @@ import type {
   SubmissionFilters,
   SubmissionListItem,
   SubmissionStats,
+  SurveySource,
+  SurveySourceList,
   ReportDeliveryCampaign,
   ReportDeliveryStatus,
 } from '@/types'
 import type { ExportDataset, ExportFilters, ExportJob } from '@/types'
+import type { AdminAccount, AdminAccountWithPassword, AdminRole, AuditEntry } from '@/types'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8080').replace(/\/+$/, '')
 const CSRF_COOKIE_NAME = import.meta.env.VITE_CSRF_COOKIE_NAME ?? 'cwi_admin_csrf'
@@ -143,6 +146,7 @@ function buildSubmissionQuery(filters: SubmissionFilters) {
   if (filters.reportPdfUploaded !== undefined) params.set('reportPdfUploaded', String(filters.reportPdfUploaded))
   if (filters.emailStatus) params.set('emailStatus', filters.emailStatus)
   if (filters.search) params.set('search', filters.search)
+  if (filters.sourceId) params.set('sourceId', filters.sourceId)
   if (filters.surveyVersion) params.set('surveyVersion', filters.surveyVersion)
 
   return params.toString()
@@ -208,6 +212,51 @@ export function getReportGenerationSettings() {
 
 export function saveReportGenerationSettings(input: { aiCallsEnabled: boolean; deferredResultDays: number }) {
   return request<ReportGenerationSettings>('/api/v1/admin/report-generation-settings', { body: JSON.stringify(input), method: 'PUT' }, { csrf: true })
+}
+
+export function listSurveySources(surveyVersion?: string) {
+  const query = surveyVersion ? '?' + new URLSearchParams({ surveyVersion }).toString() : ''
+  return request<SurveySourceList>('/api/v1/admin/survey-sources' + query)
+}
+
+export function createSurveySource(input: { code: string; name: string; note: string | null }) {
+  return request<SurveySource>('/api/v1/admin/survey-sources', { body: JSON.stringify(input), method: 'POST' }, { csrf: true })
+}
+
+export function updateSurveySource(id: string, input: { isActive: boolean; name: string; note: string | null }) {
+  return request<SurveySource>(`/api/v1/admin/survey-sources/${encodeURIComponent(id)}`, { body: JSON.stringify(input), method: 'PUT' }, { csrf: true })
+}
+
+export function deleteSurveySource(id: string) {
+  return request<void>(`/api/v1/admin/survey-sources/${encodeURIComponent(id)}`, { method: 'DELETE' }, { csrf: true })
+}
+
+export function getSurveySourceHistory(id: string) {
+  return request<{ items: AuditEntry[] }>(`/api/v1/admin/survey-sources/${encodeURIComponent(id)}/history`)
+}
+
+export function listAdminAccounts() {
+  return request<{ items: AdminAccount[] }>('/api/v1/admin/admin-users')
+}
+
+export function createAdminAccount(input: { displayName: string; email: string; role: AdminRole }) {
+  return request<AdminAccountWithPassword>('/api/v1/admin/admin-users', { body: JSON.stringify(input), method: 'POST' }, { csrf: true })
+}
+
+export function updateAdminAccount(id: string, input: { displayName: string; role: AdminRole }) {
+  return request<{ account: AdminAccount }>(`/api/v1/admin/admin-users/${encodeURIComponent(id)}`, { body: JSON.stringify(input), method: 'PUT' }, { csrf: true })
+}
+
+export function setAdminAccountLocked(id: string, locked: boolean) {
+  return request<{ account: AdminAccount }>(`/api/v1/admin/admin-users/${encodeURIComponent(id)}/${locked ? 'lock' : 'unlock'}`, { method: 'POST' }, { csrf: true })
+}
+
+export function resetAdminAccountPassword(id: string) {
+  return request<AdminAccountWithPassword>(`/api/v1/admin/admin-users/${encodeURIComponent(id)}/reset-password`, { method: 'POST' }, { csrf: true })
+}
+
+export function changeMyPassword(input: { currentPassword: string; newPassword: string }) {
+  return request<void>('/api/v1/auth/change-password', { body: JSON.stringify(input), method: 'POST' }, { csrf: true })
 }
 
 export function getRoundtableRegistrationDetail(id: string) {
