@@ -24,6 +24,8 @@ import { PublicLinkBar } from '@/components/PublicLinkBar'
 import { getLandingUrl } from '@/lib/landing'
 import { ReportDeliveryCampaignDialog } from './ReportDeliveryCampaignDialog'
 import { ReportDeliveryFileStatus, ReportDeliveryTableCell } from './ReportDeliveryControls'
+import { pausedReportTooltip } from './reportGenerationLabels'
+import { ReportGenerationSettings } from './ReportGenerationSettings'
 import { TablePagination } from '@/components/TablePagination'
 import { apiUrl, confirmReportDeliveryCampaign, getReportDeliveryCampaign, getReportDeliveryStatuses, getSubmissionDetail, getSubmissionStats, listSubmissionsPage, previewReportDeliveryCampaign } from '@/lib/api'
 import { useAuth } from '@/features/auth/AuthProvider'
@@ -128,6 +130,7 @@ function LanguageBadge({ language }: { language: SurveyLanguage }) {
 }
 
 function ReportBadge({ report }: { report: ReportSummary }) {
+  if (report.generationPaused) return <span className="report-badge report-paused" data-tooltip={pausedReportTooltip} data-tooltip-wide>{report.label}</span>
   return <span className={`report-badge report-${report.status}`}>{report.label}</span>
 }
 
@@ -834,6 +837,8 @@ export function SubmissionsPage() {
           <StatTile icon={<CheckCircle2 aria-hidden="true" size={20} />} label="Gửi đủ hai phần" tooltip="Người dùng hoàn thành cả hai phần và đồng ý bảo mật dữ liệu để nhận báo cáo đầy đủ." value={formatNumber(stats?.fullPrivateReport ?? 0)} />
         </section>
       )}
+
+      <ReportGenerationSettings canEdit={user?.role === 'admin'} />
 
       <section aria-busy={isLoading} className="content-surface" data-loading={isLoading}>
         <div className="surface-head">

@@ -20,6 +20,8 @@ export type SurveyLanguage = 'vi' | 'en'
 
 export type ReportSummary = {
   errorMessage: string | null
+  /** True while report creation is paused and this report is still waiting. */
+  generationPaused?: boolean
   jobId: string | null
   label: string
   pdfAvailable: boolean
@@ -158,6 +160,16 @@ export type RoundtableEvent = {
   eventLocation: string | null
   eventTime: string | null
   quarter: string
+  updatedAt: string | null
+  updatedByEmail: string | null
+}
+
+// Dashboard switch for calling cwi-ai. While off, new submissions are stored and the
+// survey says the report arrives by email within deferredResultDays.
+export type ReportGenerationSettings = {
+  aiCallsEnabled: boolean
+  deferredResultDays: number
+  unfinishedJobs: number
   updatedAt: string | null
   updatedByEmail: string | null
 }

@@ -29,6 +29,7 @@ import {
   listWebinarRegistrationsPage,
 } from '@/lib/api'
 import { useAuth } from '@/features/auth/AuthProvider'
+import { pausedReportTooltip } from '@/features/submissions/reportGenerationLabels'
 import { ExportDataButton } from '@/components/ExportDataButton'
 import { PublicLinkBar } from '@/components/PublicLinkBar'
 import { RoundtableEventSettings } from './RoundtableEventSettings'
@@ -124,6 +125,7 @@ function StatusBadge({ status }: { status: SubmissionStatus }) {
 }
 
 function ReportBadge({ report }: { report: ReportSummary }) {
+  if (report.generationPaused) return <span className="report-badge report-paused" data-tooltip={pausedReportTooltip} data-tooltip-wide>{report.label}</span>
   return <span className={`report-badge report-${report.status}`}>{report.label}</span>
 }
 
