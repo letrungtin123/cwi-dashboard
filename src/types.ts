@@ -47,6 +47,8 @@ export type SubmissionSource = {
 export type SubmissionListItem = {
   answersCount: number
   companyName: string | null
+  // A super admin may delete it: its report is still "Chờ tạo báo cáo" (no PDF).
+  deletable: boolean
   email: string
   fullName: string
   id: string
@@ -232,6 +234,20 @@ export type AdminAccount = {
   isActive: boolean
   lastLoginAt: string | null
   role: AdminRole
+}
+
+export type SubmissionDeletionItem = {
+  companyName: string | null
+  deletable: boolean
+  email: string
+  fullName: string
+  id: string
+  roundtableRegistrations: number
+  sourceName: string | null
+  submissionStatus: string
+  submittedAt: string
+  surveyVersion: string
+  webinarRegistrations: number
 }
 
 export type AdminAccountWithPassword = {

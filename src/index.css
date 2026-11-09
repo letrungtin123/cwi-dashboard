@@ -5589,3 +5589,156 @@ tbody tr:hover {
   font-size: 12px;
   line-height: 1.4;
 }
+/* Super admin: tick submissions whose report is still waiting, then delete them */
+.row-select-box {
+  -webkit-appearance: checkbox;
+  appearance: auto;
+  accent-color: var(--cwi-red-dark);
+  background: none;
+  border: 0;
+  box-shadow: none;
+  min-height: 0;
+  padding: 0;
+  cursor: pointer;
+  flex: 0 0 auto;
+  height: 18px;
+  margin: 0;
+  width: 18px;
+}
+
+.row-select-box:disabled {
+  cursor: not-allowed;
+  opacity: 0.32;
+}
+
+.row-select-wrap {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.row-select-head {
+  align-items: center;
+  display: inline-flex;
+  gap: 12px;
+}
+
+.person-cell.has-select {
+  padding-left: 30px;
+  position: relative;
+}
+
+.person-cell.has-select > .row-select-box,
+.person-cell.has-select > .row-select-wrap {
+  left: 0;
+  position: absolute;
+  top: 1px;
+}
+
+tr.is-selected > td {
+  background: #fff6f6;
+}
+
+.submission-card-head > div {
+  flex: 1 1 auto;
+}
+
+.submissions-selection-bar {
+  align-items: center;
+  background: #fff4f4;
+  border: 1px solid #f3c2c4;
+  border-radius: 8px;
+  color: #7a1d22;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 10px 16px;
+  justify-content: space-between;
+  margin: 14px 20px 0;
+  padding: 8px 8px 8px 14px;
+}
+
+.submissions-selection-bar > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.submissions-selection-bar .secondary-button,
+.submissions-selection-bar .danger-button {
+  min-height: 38px;
+}
+
+.submissions-selection-bar .secondary-button {
+  padding: 0 14px;
+  width: auto;
+}
+
+.submission-delete-dialog .report-modal-body {
+  display: grid;
+  gap: 12px;
+  max-height: min(62vh, 560px);
+  overflow-y: auto;
+}
+
+.submission-delete-warning {
+  align-items: flex-start;
+  background: #fff4f4;
+  border: 1px solid #f3c2c4;
+  border-radius: 8px;
+  color: #7a1d22;
+  display: flex;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 10px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.submission-delete-warning svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.submission-delete-list {
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.submission-delete-list li {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+}
+
+.submission-delete-list li + li {
+  border-top: 1px solid var(--line-soft);
+}
+
+.submission-delete-list strong {
+  color: var(--cwi-navy);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.submission-delete-list span {
+  color: #44546a;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.submission-delete-list small {
+  color: #7a8799;
+  font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+  .submissions-selection-bar {
+    margin: 14px 14px 0;
+  }
+}

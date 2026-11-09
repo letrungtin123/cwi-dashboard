@@ -25,7 +25,7 @@ import type {
   ReportDeliveryStatus,
 } from '@/types'
 import type { ExportDataset, ExportFilters, ExportJob } from '@/types'
-import type { AdminAccount, AdminAccountWithPassword, AdminRole, AuditEntry } from '@/types'
+import type { AdminAccount, AdminAccountWithPassword, AdminRole, AuditEntry, SubmissionDeletionItem } from '@/types'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8080').replace(/\/+$/, '')
 const CSRF_COOKIE_NAME = import.meta.env.VITE_CSRF_COOKIE_NAME ?? 'cwi_admin_csrf'
@@ -253,6 +253,14 @@ export function setAdminAccountLocked(id: string, locked: boolean) {
 
 export function resetAdminAccountPassword(id: string) {
   return request<AdminAccountWithPassword>(`/api/v1/admin/admin-users/${encodeURIComponent(id)}/reset-password`, { method: 'POST' }, { csrf: true })
+}
+
+export function previewSubmissionDeletion(ids: string[]) {
+  return request<{ items: SubmissionDeletionItem[] }>('/api/v1/admin/submission-deletions/preview', { body: JSON.stringify({ ids }), method: 'POST' }, { csrf: true })
+}
+
+export function deleteSubmissions(ids: string[]) {
+  return request<{ deleted: number }>('/api/v1/admin/submission-deletions', { body: JSON.stringify({ ids }), method: 'POST' }, { csrf: true })
 }
 
 export function changeMyPassword(input: { currentPassword: string; newPassword: string }) {
