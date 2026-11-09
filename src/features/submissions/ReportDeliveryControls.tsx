@@ -2,6 +2,7 @@ import { useRef, useState, type ChangeEvent } from 'react'
 import { CheckCircle2, Download, FileText, LockKeyhole, RotateCcw, Upload, XCircle } from 'lucide-react'
 import { apiUrl, retryReportEmail, retryReportGeneration, uploadReportPdf } from '@/lib/api'
 import type { ReportDeliveryStatus, ReportSummary } from '@/types'
+import { pausedReportTooltip } from './reportGenerationLabels'
 
 function formatBytes(value: number | null) {
   if (!value) return ''
@@ -190,6 +191,9 @@ export function ReportDeliveryTableCell({
 }
 
 export function ReportDeliveryFileStatus({ report, status }: { report: ReportSummary; status: ReportDeliveryStatus | null }) {
+  if (report.status === 'generating' && report.generationPaused) {
+    return <span className="report-file-result report-file-result-progress report-paused" data-tooltip={pausedReportTooltip} data-tooltip-wide>Chờ tạo báo cáo</span>
+  }
   if (report.status === 'generating') return <span className="report-file-result report-file-result-progress report-generating">Đang tạo báo cáo</span>
   if (report.status === 'failed') return <span className="report-file-result report-file-result-progress report-failed" data-tooltip={report.errorMessage ?? 'Tạo báo cáo lỗi'} data-tooltip-wide>Tạo báo cáo lỗi</span>
   if (!status) return <span className="report-table-state report-table-state-error">Chưa tải được trạng thái PDF</span>

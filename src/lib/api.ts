@@ -1,6 +1,7 @@
 import type {
   AuthSession,
   CursorPage,
+  ReportGenerationSettings,
   RoundtableRegistrationDetail,
   RoundtableRegistrationFilters,
   RoundtableRegistrationListItem,
@@ -199,6 +200,14 @@ export function getRoundtableEvent() {
 
 export function saveRoundtableEvent(input: { eventLocation: string; eventTime: string }) {
   return request<RoundtableEvent>('/api/v1/admin/roundtable-event', { body: JSON.stringify(input), method: 'PUT' }, { csrf: true })
+}
+
+export function getReportGenerationSettings() {
+  return request<ReportGenerationSettings>('/api/v1/admin/report-generation-settings')
+}
+
+export function saveReportGenerationSettings(input: { aiCallsEnabled: boolean; deferredResultDays: number }) {
+  return request<ReportGenerationSettings>('/api/v1/admin/report-generation-settings', { body: JSON.stringify(input), method: 'PUT' }, { csrf: true })
 }
 
 export function getRoundtableRegistrationDetail(id: string) {
