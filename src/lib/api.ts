@@ -73,6 +73,12 @@ function getCsrfToken() {
   return csrfTokenMemory || readCookie(CSRF_COOKIE_NAME)
 }
 
+// Fired when the server no longer accepts the session (expired, revoked, account locked).
+// AuthProvider listens for it and returns to the sign-in screen.
+export const SESSION_EXPIRED_EVENT = 'cwi:session-expired'
+// These answer 401 as part of their normal job, so they do not mean "session expired".
+const AUTH_PROBE_PATHS = ['/api/v1/auth/login', '/api/v1/auth/me']
+
 async function request<T>(path: string, init: RequestInit = {}, options: { csrf?: boolean } = {}): Promise<T> {
   const headers = new Headers(init.headers)
   const hasBody = init.body !== undefined
@@ -90,6 +96,10 @@ async function request<T>(path: string, init: RequestInit = {}, options: { csrf?
     credentials: 'include',
     headers,
   })
+
+  if (response.status === 401 && !AUTH_PROBE_PATHS.includes(path)) {
+    window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
+  }
 
   if (response.status === 204) {
     return undefined as T

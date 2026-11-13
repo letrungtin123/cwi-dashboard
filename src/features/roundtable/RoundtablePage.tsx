@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import {
   Briefcase,
@@ -336,7 +336,7 @@ function RoundtableTable({ items, onSelect }: { items: RoundtableRegistrationLis
 
 function ClientMetaList({ value }: { value: Record<string, unknown> }) {
   const entries = Object.entries(value)
-  if (!entries.length) return <p>Không có metadata phía client.</p>
+  if (!entries.length) return <p>Không có thông tin thiết bị.</p>
 
   return (
     <dl className="meta-list">
@@ -483,31 +483,31 @@ function RoundtableDetailDrawer({
               </section>
             ) : (
               <section className="detail-section">
-                <h3>Trạng thái survey</h3>
+                <h3>Trạng thái khảo sát</h3>
                 <p>Người này mới đăng ký {eventName}, chưa có lượt gửi khảo sát được liên kết.</p>
               </section>
             )}
 
             <section className="detail-section">
-              <h3>Thông tin kỹ thuật</h3>
+              <h3>Thông tin tra cứu</h3>
               <dl className="meta-list">
                 <div>
-                  <dt>{eventName} ID</dt>
+                  <dt>Mã đăng ký</dt>
                   <dd>{detail.id}</dd>
                 </div>
                 <div>
-                  <dt>Survey idempotency key</dt>
+                  <dt>Mã liên kết khảo sát</dt>
                   <dd>{displayText(detail.surveySubmissionIdempotencyKey, 'Không có')}</dd>
                 </div>
                 <div>
-                  <dt>User agent</dt>
+                  <dt>Trình duyệt và thiết bị</dt>
                   <dd>{displayText(detail.userAgent, 'Không có')}</dd>
                 </div>
               </dl>
             </section>
 
             <section className="detail-section">
-              <h3>Client metadata</h3>
+              <h3>Thông tin thiết bị khi đăng ký</h3>
               <ClientMetaList value={detail.clientMeta} />
             </section>
           </div>
@@ -548,6 +548,8 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
   const [isLoading, setIsLoading] = useState(true)
   const [hasNextPage, setHasNextPage] = useState(false)
   const [error, setError] = useState('')
+  const [statsError, setStatsError] = useState('')
+  const pageRequestRef = useRef(0)
   const [selectedId, setSelectedId] = useState('')
   const [detail, setDetail] = useState<RoundtableRegistrationDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
@@ -577,18 +579,22 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
   const loadStats = useCallback(async () => {
     try {
       setStats(await registrationApi.getStats(selectedQuarter))
+      setStatsError('')
     } catch (caught) {
-      const message = caught instanceof Error ? caught.message : `Không tải được thống kê ${eventName}.`
-      setError(message)
+      setStatsError(caught instanceof Error ? caught.message : `Không tải được thống kê ${eventName}.`)
     }
   }, [eventName, registrationApi, selectedQuarter])
 
   const loadPage = useCallback(async () => {
+    // A newer load (filter or page change) makes this one obsolete; its late answer is dropped.
+    const requestId = ++pageRequestRef.current
+    const isCurrent = () => requestId === pageRequestRef.current
     setIsLoading(true)
     setError('')
 
     try {
       const response = await registrationApi.listPage(filters)
+      if (!isCurrent()) return
       setItems(response.items)
       setHasNextPage(response.hasNextPage)
 
@@ -600,10 +606,11 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
         return next
       })
     } catch (caught) {
+      if (!isCurrent()) return
       const message = caught instanceof Error ? caught.message : `Không tải được dữ liệu ${eventName}.`
       setError(message)
     } finally {
-      setIsLoading(false)
+      if (isCurrent()) setIsLoading(false)
     }
   }, [eventName, filters, page, registrationApi])
 
@@ -658,9 +665,10 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
           <StatTile icon={<UsersRound aria-hidden="true" size={20} />} label="Tổng đăng ký" tooltip={`Tổng số lượt đăng ký ${eventTitle} đã được ghi nhận, gồm cả đăng ký riêng và đăng ký đã khảo sát.`} value={formatNumber(stats?.totalRegistrations ?? 0)} />
           <StatTile icon={<Link2 aria-hidden="true" size={20} />} label="Đã khảo sát" tooltip={`Đăng ký ${eventName} đã có lượt gửi khảo sát trong hệ thống.`} value={formatNumber(stats?.linkedSubmissions ?? 0)} />
           <StatTile icon={<UserCheck aria-hidden="true" size={20} />} label="Đăng ký riêng" tooltip={`Người dùng đã đăng ký ${eventName} nhưng chưa gửi khảo sát.`} value={formatNumber(stats?.standaloneRegistrations ?? 0)} />
-          <StatTile icon={<CalendarDays aria-hidden="true" size={20} />} label="Hôm nay" tooltip={`Số đăng ký ${eventName} được tạo từ đầu ngày hiện tại theo thời gian database.`} value={formatNumber(stats?.todayRegistrations ?? 0)} />
+          <StatTile icon={<CalendarDays aria-hidden="true" size={20} />} label="Hôm nay" tooltip={`Số đăng ký ${eventName} được tạo từ đầu ngày hôm nay (tính theo giờ máy chủ).`} value={formatNumber(stats?.todayRegistrations ?? 0)} />
         </section>
       )}
+      {statsError ? <p className="report-delivery-error" role="status">Không tải được số liệu thống kê: {statsError}</p> : null}
 
       {isRoundtable ? <RoundtableEventSettings canEdit={canManageContent(user?.role)} /> : null}
 

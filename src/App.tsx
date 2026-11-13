@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { RefreshCw, WifiOff } from 'lucide-react'
 import { DashboardShell, type DashboardSection } from './components/DashboardShell'
@@ -44,6 +44,16 @@ export default function App() {
   // 'all', 'none' or a source id; kept here so "Xem danh sách" on a source opens the filtered list.
   const [submissionSourceFilter, setSubmissionSourceFilter] = useState('all')
   const [changingPassword, setChangingPassword] = useState(false)
+
+  // A different account (or the same one after signing in again) starts from the default screen,
+  // so a viewer never lands on a section left open by a super admin.
+  const userId = user?.id ?? null
+  useEffect(() => {
+    setActiveSection('submissions')
+    setSurveyTab('submissions')
+    setSubmissionSourceFilter('all')
+    setChangingPassword(false)
+  }, [userId])
 
   if (status === 'checking') {
     return (

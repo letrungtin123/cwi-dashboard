@@ -6,7 +6,7 @@ import { ApiError } from '@/lib/api'
 import { useAuth } from './AuthProvider'
 
 export function LoginPage() {
-  const { login } = useAuth()
+  const { login, sessionExpired } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -60,7 +60,7 @@ export function LoginPage() {
               id="email"
               inputMode="email"
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="example.com"
+              placeholder="email@congty.vn"
               type="email"
               value={email}
             />
@@ -82,6 +82,7 @@ export function LoginPage() {
           </div>
 
           {error ? <p className="form-error">{error}</p> : null}
+          {!error && sessionExpired ? <p className="form-notice" role="status">Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.</p> : null}
 
           <button className="primary-button" disabled={isSubmitting || !email.trim() || !password} type="submit">
             <span>{isSubmitting ? 'Đang đăng nhập' : 'Đăng nhập'}</span>
