@@ -305,8 +305,10 @@ export type QuarterlyReportDownloadFilters = {
 export type ExportDataset = 'submissions' | 'roundtable' | 'webinar'
 
 export type ExportFilters = {
+  emailStatus?: 'failed'
   linkStatus?: 'linked' | 'standalone'
   quarter?: string
+  reportStatus?: ReportStatus
   roundtableRegistered?: boolean
   search?: string
   sourceId?: string

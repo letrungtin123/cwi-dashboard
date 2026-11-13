@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { ApiError, getCurrentSession, login as loginRequest, logout as logoutRequest } from '@/lib/api'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { ApiError, getCurrentSession, login as loginRequest, logout as logoutRequest, SESSION_EXPIRED_EVENT } from '@/lib/api'
 import type { AdminUser } from '@/types'
 
 type AuthStatus = 'authenticated' | 'checking' | 'guest' | 'unavailable'
@@ -7,6 +7,8 @@ type AuthStatus = 'authenticated' | 'checking' | 'guest' | 'unavailable'
 type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  // The user was sent back to sign-in because the session ended on the server.
+  sessionExpired: boolean
   retrySession: () => Promise<void>
   status: AuthStatus
   user: AdminUser | null
@@ -17,6 +19,11 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('checking')
   const [user, setUser] = useState<AdminUser | null>(null)
+  const [sessionExpired, setSessionExpired] = useState(false)
+  const userRef = useRef<AdminUser | null>(null)
+  useEffect(() => {
+    userRef.current = user
+  }, [user])
 
   const refresh = useCallback(async () => {
     try {
@@ -33,8 +40,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refresh()
   }, [refresh])
 
+  useEffect(() => {
+    const handleExpired = () => {
+      if (userRef.current) setSessionExpired(true)
+      setUser(null)
+      setStatus('guest')
+    }
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleExpired)
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleExpired)
+  }, [])
+
   const login = useCallback(async (email: string, password: string) => {
     const session = await loginRequest(email, password)
+    setSessionExpired(false)
     setUser(session.user)
     setStatus('authenticated')
   }, [])
@@ -42,6 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await logoutRequest()
+    } catch {
+      // Signing out locally still works; the server session expires on its own.
     } finally {
       setUser(null)
       setStatus('guest')
@@ -53,10 +73,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       retrySession: refresh,
+      sessionExpired,
       status,
       user,
     }),
-    [login, logout, refresh, status, user],
+    [login, logout, refresh, sessionExpired, status, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -71,10 +71,10 @@ const statusOptions: Array<SelectOption<StatusOption>> = [
 
 const reportStatusOptions: Array<SelectOption<ReportStatusOption>> = [
   { description: 'Không lọc theo trạng thái tạo báo cáo', label: 'Tất cả', value: 'all' },
-  { description: 'Chưa có tác vụ tạo báo cáo', label: 'Chưa tạo', value: 'not_started' },
+  { description: 'Chưa bắt đầu tạo báo cáo', label: 'Chưa tạo', value: 'not_started' },
   { description: 'Báo cáo đang được xử lý', label: 'Đang tạo', value: 'generating' },
   { description: 'Đã tạo xong báo cáo', label: 'Đã tạo', value: 'completed' },
-  { description: 'Tạo báo cáo thất bại, có thể retry', label: 'Tạo lỗi', value: 'failed' },
+  { description: 'Tạo báo cáo bị lỗi, có thể bấm "Tạo lại"', label: 'Tạo lỗi', value: 'failed' },
   { description: 'Lượt gửi không tạo báo cáo', label: 'Không tạo', value: 'skipped' },
 ]
 
@@ -577,6 +577,8 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
   const [deleteNotice, setDeleteNotice] = useState('')
   const canDelete = isSuperadmin(user?.role)
   const itemsRef = useRef(items)
+  const pageRequestRef = useRef(0)
+  const [statsError, setStatsError] = useState('')
   const statsRef = useRef(stats)
 
   useEffect(() => {
@@ -602,11 +604,13 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
   const statsSurveyVersion = surveyVersion === 'all' ? undefined : surveyVersion
   const surveyVersionOptions = useMemo(() => buildSurveyVersionOptions(stats), [stats])
   const exportFilters = useMemo<ExportFilters>(() => ({
+    emailStatus: emailStatus === 'all' ? undefined : emailStatus,
+    reportStatus: reportStatus === 'all' ? undefined : reportStatus,
     search: search || undefined,
     sourceId: sourceFilter === 'all' ? undefined : sourceFilter,
     status: status === 'all' ? undefined : status,
     surveyVersion: statsSurveyVersion,
-  }), [search, sourceFilter, status, statsSurveyVersion])
+  }), [emailStatus, reportStatus, search, sourceFilter, status, statsSurveyVersion])
 
   useEffect(() => {
     listSurveySources().then((result) => setSources(result.items)).catch(() => {
@@ -619,14 +623,18 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
       const nextStats = await getSubmissionStats(statsSurveyVersion)
       setStats(nextStats)
       statsRef.current = nextStats
+      setStatsError('')
     } catch (caught) {
       if (options.silent) return
-      const message = caught instanceof Error ? caught.message : 'Không tải được thống kê.'
-      setError(message)
+      setStatsError(caught instanceof Error ? caught.message : 'Không tải được thống kê.')
     }
   }, [statsSurveyVersion])
 
   const loadPage = useCallback(async (options: { silent?: boolean } = {}) => {
+    // A user-started load supersedes any load still running; a silent background refresh only
+    // applies if nothing newer started while it was waiting.
+    const requestId = options.silent ? pageRequestRef.current : ++pageRequestRef.current
+    const isCurrent = () => requestId === pageRequestRef.current
     if (!options.silent) {
       setIsLoading(true)
       setError("")
@@ -635,15 +643,25 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
 
     try {
       const response = await listSubmissionsPage(filters)
-      setItems(response.items)
-      setHasNextPage(response.hasNextPage)
-      let deliveryRows: ReportDeliveryStatus[] = []
+      if (!isCurrent()) return
+      let deliveryRows: ReportDeliveryStatus[] | null = null
+      let deliveryError = ''
       try {
         deliveryRows = await getReportDeliveryStatuses(response.items.map((item) => item.id))
       } catch (caught) {
-        if (!options.silent) setDeliveryStatusError(caught instanceof Error ? caught.message : "Không tải được trạng thái file PDF.")
+        deliveryError = caught instanceof Error ? caught.message : "Không tải được trạng thái file PDF."
       }
-      setDeliveryStatuses(Object.fromEntries(deliveryRows.map((row) => [row.submissionId, row])))
+      if (!isCurrent()) return
+      setItems(response.items)
+      setHasNextPage(response.hasNextPage)
+      if (deliveryRows) {
+        setDeliveryStatuses(Object.fromEntries(deliveryRows.map((row) => [row.submissionId, row])))
+      } else if (!options.silent) {
+        // New rows without statuses: show the problem. A failed background refresh keeps the
+        // statuses already on screen (and their upload/download buttons).
+        setDeliveryStatuses({})
+        setDeliveryStatusError(deliveryError)
+      }
 
       const lastItem = response.items.at(-1)
       const nextCursor: PageCursor = lastItem
@@ -656,11 +674,11 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
         return next
       })
     } catch (caught) {
-      if (options.silent) return
+      if (options.silent || !isCurrent()) return
       const message = caught instanceof Error ? caught.message : 'Không tải được dữ liệu.'
       setError(message)
     } finally {
-      if (!options.silent) setIsLoading(false)
+      if (!options.silent && isCurrent()) setIsLoading(false)
     }
   }, [filters, page])
 
@@ -702,7 +720,7 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
         if (!active) return
 
         const countChanged = statsRef.current?.totalSubmissions !== nextStats.totalSubmissions
-        const reportInProgress = itemsRef.current.some((item) => item.report.status === 'generating')
+        const reportInProgress = itemsRef.current.some((item) => item.report.status === 'generating' && !item.report.generationPaused)
         setStats(nextStats)
         statsRef.current = nextStats
 
@@ -846,6 +864,7 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
           <StatTile icon={<CheckCircle2 aria-hidden="true" size={20} />} label="Gửi đủ hai phần" tooltip="Người dùng hoàn thành cả hai phần và đồng ý bảo mật dữ liệu để nhận báo cáo đầy đủ." value={formatNumber(stats?.fullPrivateReport ?? 0)} />
         </section>
       )}
+      {statsError ? <p className="report-delivery-error" role="status">Không tải được số liệu thống kê: {statsError}</p> : null}
 
       <ReportGenerationSettings canEdit={canManageContent(user?.role)} />
 

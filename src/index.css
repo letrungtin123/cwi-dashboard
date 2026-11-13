@@ -5747,3 +5747,16 @@ tr.is-selected > td {
 .quarterly-report-message.quarterly-report-list-message {
   margin: 14px 22px 0;
 }
+
+/* Sign-in screen: shown after the server ended the session. */
+.form-notice {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+  margin: 0;
+  padding: 10px 12px;
+}
