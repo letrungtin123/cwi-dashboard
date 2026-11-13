@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { CheckCircle2, Eye, EyeOff, X } from 'lucide-react'
 import { changeMyPassword } from '@/lib/api'
+import { useDialogKeyboard } from '@/lib/useDialogKeyboard'
 
 const MIN_LENGTH = 8
 const MAX_LENGTH = 72
@@ -8,6 +9,8 @@ const MAX_LENGTH = 72
 // "Đổi mật khẩu" for the signed-in account. Other sessions of the account are
 // signed out; this one stays signed in.
 export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
+  const dialogRef = useRef<HTMLFormElement>(null)
+  useDialogKeyboard(true, dialogRef, { onEscape: onClose })
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -41,7 +44,7 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="report-modal-backdrop" role="presentation">
-      <form aria-labelledby="change-password-title" aria-modal="true" className="report-modal survey-source-dialog" onSubmit={(event) => void submit(event)} role="dialog">
+      <form aria-labelledby="change-password-title" aria-modal="true" className="report-modal survey-source-dialog" onSubmit={(event) => void submit(event)} role="dialog" ref={dialogRef} tabIndex={-1}>
         <div className="report-modal-header">
           <div>
             <p>Tài khoản của bạn</p>

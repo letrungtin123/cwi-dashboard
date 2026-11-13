@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { X } from 'lucide-react'
+import { useDialogKeyboard } from '@/lib/useDialogKeyboard'
 import type { SurveySource } from '@/types'
 import { suggestSurveySourceCode, SURVEY_SOURCE_CODE_PATTERN, surveySourceUrl } from './surveySourceLinks'
 
@@ -20,6 +21,8 @@ export function SurveySourceFormDialog({
   onSubmit: (values: SurveySourceFormValues) => void
   source: SurveySource | null
 }) {
+  const dialogRef = useRef<HTMLFormElement>(null)
+  useDialogKeyboard(true, dialogRef, { onEscape: onClose })
   const [name, setName] = useState(source?.name ?? '')
   const [typedCode, setTypedCode] = useState<string | null>(null)
   const [note, setNote] = useState(source?.note ?? '')
@@ -35,7 +38,7 @@ export function SurveySourceFormDialog({
 
   return (
     <div className="report-modal-backdrop" role="presentation">
-      <form aria-labelledby="survey-source-dialog-title" aria-modal="true" className="report-modal survey-source-dialog" onSubmit={submit} role="dialog">
+      <form aria-labelledby="survey-source-dialog-title" aria-modal="true" className="report-modal survey-source-dialog" onSubmit={submit} role="dialog" ref={dialogRef} tabIndex={-1}>
         <div className="report-modal-header">
           <div>
             <p>Nguồn mời</p>

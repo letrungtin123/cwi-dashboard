@@ -32,6 +32,15 @@ const CSRF_COOKIE_NAME = import.meta.env.VITE_CSRF_COOKIE_NAME ?? 'cwi_admin_csr
 
 let csrfTokenMemory = ''
 
+// Largest file the server accepts in one upload (client_max_body_size in the server's nginx).
+export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024
+const FILE_TOO_LARGE_MESSAGE = 'File quá lớn. Hệ thống chỉ nhận file tối đa 20 MB.'
+
+// Checked before uploading, so a large file fails at once instead of after a long upload.
+function assertUploadSize(file: File) {
+  if (file.size > MAX_UPLOAD_BYTES) throw new ApiError(413, 'file_too_large', FILE_TOO_LARGE_MESSAGE)
+}
+
 export class ApiError extends Error {
   readonly code: string
   readonly status: number
@@ -65,7 +74,7 @@ export function apiUrl(path: string) {
   return `${baseUrl}${normalizedPath}`
 }
 
-export function setCsrfToken(token: string) {
+function setCsrfToken(token: string) {
   csrfTokenMemory = token
 }
 
@@ -79,11 +88,17 @@ export const SESSION_EXPIRED_EVENT = 'cwi:session-expired'
 // These answer 401 as part of their normal job, so they do not mean "session expired".
 const AUTH_PROBE_PATHS = ['/api/v1/auth/login', '/api/v1/auth/me']
 
-async function request<T>(path: string, init: RequestInit = {}, options: { csrf?: boolean } = {}): Promise<T> {
-  const headers = new Headers(init.headers)
-  const hasBody = init.body !== undefined
+type RequestOptions = {
+  csrf?: boolean
+  // Shown when the server gives no message of its own.
+  fallbackMessage?: string
+}
 
-  if (hasBody && !headers.has('content-type')) {
+async function request<T>(path: string, init: RequestInit = {}, options: RequestOptions = {}): Promise<T> {
+  const headers = new Headers(init.headers)
+
+  // JSON bodies are strings; file uploads (FormData) let the browser set their own content type.
+  if (typeof init.body === 'string' && !headers.has('content-type')) {
     headers.set('content-type', 'application/json')
   }
 
@@ -109,7 +124,8 @@ async function request<T>(path: string, init: RequestInit = {}, options: { csrf?
 
   if (!response.ok) {
     const error = payload && 'error' in payload ? payload.error : undefined
-    throw new ApiError(response.status, error?.code ?? 'request_failed', error?.message ?? 'Yêu cầu không thành công.')
+    if (response.status === 413 && !error?.message) throw new ApiError(413, 'file_too_large', FILE_TOO_LARGE_MESSAGE)
+    throw new ApiError(response.status, error?.code ?? 'request_failed', error?.message ?? options.fallbackMessage ?? 'Yêu cầu không thành công.')
   }
 
   if (!payload || !('data' in payload)) {
@@ -182,10 +198,6 @@ export function listSubmissionsPage(filters: SubmissionFilters = {}) {
   return request<CursorPage<SubmissionListItem>>('/api/v1/admin/survey-submissions/page?' + buildSubmissionQuery(filters))
 }
 
-export function listSubmissions(filters: SubmissionFilters = {}) {
-  return request<SubmissionListItem[]>(`/api/v1/admin/survey-submissions?${buildSubmissionQuery(filters)}`)
-}
-
 export function getSubmissionStats(surveyVersion?: string) {
   const query = surveyVersion ? '?' + new URLSearchParams({ surveyVersion }).toString() : ''
   return request<SubmissionStats>('/api/v1/admin/survey-submissions/stats' + query)
@@ -197,10 +209,6 @@ export function getSubmissionDetail(id: string) {
 
 export function listRoundtableRegistrationsPage(filters: RoundtableRegistrationFilters = {}) {
   return request<CursorPage<RoundtableRegistrationListItem>>('/api/v1/admin/roundtable-registrations/page?' + buildRoundtableQuery(filters))
-}
-
-export function listRoundtableRegistrations(filters: RoundtableRegistrationFilters = {}) {
-  return request<RoundtableRegistrationListItem[]>(`/api/v1/admin/roundtable-registrations?${buildRoundtableQuery(filters)}`)
 }
 
 export function getRoundtableRegistrationStats(quarter?: string) {
@@ -285,10 +293,6 @@ export function listWebinarRegistrationsPage(filters: WebinarRegistrationFilters
   return request<CursorPage<WebinarRegistrationListItem>>('/api/v1/admin/webinar-registrations/page?' + buildRoundtableQuery(filters))
 }
 
-export function listWebinarRegistrations(filters: WebinarRegistrationFilters = {}) {
-  return request<WebinarRegistrationListItem[]>(`/api/v1/admin/webinar-registrations?${buildRoundtableQuery(filters)}`)
-}
-
 export function getWebinarRegistrationStats() {
   return request<WebinarRegistrationStats>('/api/v1/admin/webinar-registrations/stats')
 }
@@ -302,6 +306,7 @@ export function listQuarterlyReports() {
 }
 
 export async function uploadQuarterlyReport(input: { activate: boolean; file: File; periodQuarter: number; periodYear: number; subtitle: string; title: string }) {
+  assertUploadSize(input.file)
   const formData = new FormData()
   formData.append('file', input.file, input.file.name)
   formData.append('periodYear', String(input.periodYear))
@@ -309,19 +314,7 @@ export async function uploadQuarterlyReport(input: { activate: boolean; file: Fi
   formData.append('title', input.title)
   formData.append('subtitle', input.subtitle)
   formData.append('activate', String(input.activate))
-  const response = await fetch(apiUrl('/api/v1/admin/quarterly-reports/reports'), {
-    body: formData,
-    credentials: 'include',
-    headers: { 'x-csrf-token': getCsrfToken() },
-    method: 'POST',
-  })
-  const payload = (await response.json().catch(() => null)) as ApiEnvelope<QuarterlyReportAdmin> | { error?: { code?: string; message?: string } } | null
-  if (!response.ok) {
-    const error = payload && 'error' in payload ? payload.error : undefined
-    throw new ApiError(response.status, error?.code ?? 'quarterly_report_upload_failed', error?.message ?? 'Không thể tải báo cáo quý lên.')
-  }
-  if (!payload || !('data' in payload)) throw new ApiError(response.status, 'invalid_response', 'Phản hồi từ hệ thống không hợp lệ.')
-  return payload.data
+  return request<QuarterlyReportAdmin>('/api/v1/admin/quarterly-reports/reports', { body: formData, method: 'POST' }, { csrf: true, fallbackMessage: 'Không thể tải báo cáo quý lên.' })
 }
 
 function buildQuarterlyReportDownloadQuery(filters: QuarterlyReportDownloadFilters) {
@@ -356,25 +349,9 @@ export function getExportDownloadUrl(id: string) {
   return apiUrl("/api/v1/admin/exports/" + encodeURIComponent(id) + "/download")
 }
 
-export async function downloadExportFile(id: string) {
-  const response = await fetch(apiUrl('/api/v1/admin/exports/' + encodeURIComponent(id) + '/download'), {
-    credentials: 'include',
-  })
-  if (!response.ok) {
-    throw new ApiError(response.status, 'export_download_failed', 'Không tải được file dữ liệu.')
-  }
-  return response.blob()
-}
-
-
-
 export function getReportDeliveryStatuses(ids: string[]) {
   const params = new URLSearchParams({ ids: ids.join(',') })
   return request<ReportDeliveryStatus[]>('/api/v1/admin/report-delivery/submissions/status?' + params.toString())
-}
-
-export function getReportDeliveryStatus(id: string) {
-  return request<ReportDeliveryStatus>(`/api/v1/admin/report-delivery/submissions/${encodeURIComponent(id)}/status`)
 }
 
 export function previewReportDeliveryCampaign() {
@@ -390,22 +367,10 @@ export function getReportDeliveryCampaign(id: string) {
 }
 
 export async function uploadReportPdf(id: string, file: File) {
+  assertUploadSize(file)
   const formData = new FormData()
   formData.append('file', file, file.name)
-  const headers = new Headers({ 'x-csrf-token': getCsrfToken() })
-  const response = await fetch(apiUrl(`/api/v1/admin/report-delivery/submissions/${encodeURIComponent(id)}/report-pdf`), {
-    body: formData,
-    credentials: 'include',
-    headers,
-    method: 'PUT',
-  })
-  const payload = (await response.json().catch(() => null)) as ApiEnvelope<ReportDeliveryStatus> | { error?: { code?: string; message?: string } } | null
-  if (!response.ok) {
-    const error = payload && 'error' in payload ? payload.error : undefined
-    throw new ApiError(response.status, error?.code ?? 'report_pdf_upload_failed', error?.message ?? 'Không tải được file PDF lên.')
-  }
-  if (!payload || !('data' in payload)) throw new ApiError(response.status, 'invalid_response', 'Phản hồi từ hệ thống không hợp lệ.')
-  return payload.data
+  return request<ReportDeliveryStatus>(`/api/v1/admin/report-delivery/submissions/${encodeURIComponent(id)}/report-pdf`, { body: formData, method: 'PUT' }, { csrf: true, fallbackMessage: 'Không tải được file PDF lên.' })
 }
 
 export function retryReportEmail(id: string) {

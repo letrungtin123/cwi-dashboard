@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   ChevronRight,
   CircleAlert,
-  Download,
   Eye,
   FileText,
   Mail,
@@ -22,16 +21,17 @@ import {
 import { ExportDataButton } from '@/components/ExportDataButton'
 import { ReportDeliveryCampaignDialog } from './ReportDeliveryCampaignDialog'
 import { ReportDeliveryFileStatus, ReportDeliveryTableCell } from './ReportDeliveryControls'
-import { pausedReportTooltip } from './reportGenerationLabels'
 import { ReportGenerationSettings } from './ReportGenerationSettings'
 import { CustomSelect, type SelectOption } from '@/components/CustomSelect'
 import { TablePagination } from '@/components/TablePagination'
-import { apiUrl, confirmReportDeliveryCampaign, getReportDeliveryCampaign, getReportDeliveryStatuses, getSubmissionDetail, getSubmissionStats, listSubmissionsPage, listSurveySources, previewReportDeliveryCampaign } from '@/lib/api'
+import { EmptyState, privacyConsentLabels, ReportBadge, ReportDownloadLink, SkeletonLine, StatsSkeleton, StatTile, StatusBadge } from '@/components/DataDisplay'
+import { useDialogKeyboard } from '@/lib/useDialogKeyboard'
+import { confirmReportDeliveryCampaign, getReportDeliveryCampaign, getReportDeliveryStatuses, getSubmissionDetail, getSubmissionStats, listSubmissionsPage, listSurveySources, previewReportDeliveryCampaign } from '@/lib/api'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { formatDateTime, formatNumber, valueToText } from '@/lib/format'
 import { canManageContent, isSuperadmin } from '@/lib/roles'
 import { SubmissionDeleteDialog } from './SubmissionDeleteDialog'
-import type { ExportFilters, PrivacyConsent, ReportDeliveryCampaign, ReportDeliveryStatus, ReportStatus, ReportSummary, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus, SurveyLanguage, SurveySource } from '@/types'
+import type { ExportFilters, ReportDeliveryCampaign, ReportDeliveryStatus, ReportStatus, SubmissionDetail, SubmissionFilters, SubmissionListItem, SubmissionStats, SubmissionStatus, SurveyLanguage, SurveySource } from '@/types'
 
 type StatusOption = 'all' | SubmissionStatus
 type ReportStatusOption = 'all' | ReportStatus
@@ -41,26 +41,7 @@ type PageCursor = { before: string; beforeId: string } | null
 const defaultPageSize = 10
 const searchDebounceMs = 350
 
-const statusMeta: Record<SubmissionStatus, { className: string; label: string }> = {
-  full_private_report: {
-    className: 'status-green',
-    label: 'Gửi đủ hai phần',
-  },
-  part1_only: {
-    className: 'status-blue',
-    label: 'Chỉ Phần 1',
-  },
-  part2_refused_privacy: {
-    className: 'status-amber',
-    label: 'Phần 2 không đồng ý',
-  },
-}
 
-const privacyLabels: Record<PrivacyConsent, string> = {
-  no: 'Không đồng ý',
-  not_applicable: 'Không áp dụng',
-  yes: 'Đồng ý',
-}
 
 const statusOptions: Array<SelectOption<StatusOption>> = [
   { description: 'Hiển thị toàn bộ lượt gửi', label: 'Tất cả trạng thái', value: 'all' },
@@ -130,10 +111,6 @@ function questionTypeLabel(type: string) {
   return 'Câu trả lời'
 }
 
-function StatusBadge({ status }: { status: SubmissionStatus }) {
-  const meta = statusMeta[status]
-  return <span className={`status-badge ${meta.className}`}>{meta.label}</span>
-}
 
 function LanguageBadge({ language }: { language: SurveyLanguage }) {
   return (
@@ -143,10 +120,6 @@ function LanguageBadge({ language }: { language: SurveyLanguage }) {
   )
 }
 
-function ReportBadge({ report }: { report: ReportSummary }) {
-  if (report.generationPaused) return <span className="report-badge report-paused" data-tooltip={pausedReportTooltip} data-tooltip-wide>{report.label}</span>
-  return <span className={`report-badge report-${report.status}`}>{report.label}</span>
-}
 
 function DeliveryStatusBadge({ status }: { status: ReportDeliveryStatus | null }) {
   const emailStatus = status?.emailStatus ?? 'not_ready'
@@ -158,56 +131,9 @@ function DeliveryStatusBadge({ status }: { status: ReportDeliveryStatus | null }
   return <span className="delivery-badge is-missing">Thiếu PDF</span>
 }
 
-function ReportDownloadLink({ report }: { report: ReportSummary }) {
-  const { user } = useAuth()
-  if (!report.pdfDownloadUrl || !canManageContent(user?.role)) return null
 
-  return (
-    <a className="mini-link-button" data-tooltip="Tải báo cáo PDF" href={apiUrl(report.pdfDownloadUrl)} rel="noreferrer" target="_blank">
-      <Download aria-hidden="true" size={15} />
-      <span>Tải PDF</span>
-    </a>
-  )
-}
 
-function StatTile({ icon, label, tooltip, value }: { icon: ReactNode; label: string; tooltip: string; value: string }) {
-  return (
-    <article aria-label={`${label}: ${value}. ${tooltip}`} className="stat-tile" data-tooltip={tooltip} data-tooltip-wide tabIndex={0}>
-      <div className="stat-icon">{icon}</div>
-      <div>
-        <p>{label}</p>
-        <strong>{value}</strong>
-      </div>
-    </article>
-  )
-}
 
-function SkeletonLine({ className = '' }: { className?: string }) {
-  return (
-    <motion.span
-      animate={{ backgroundPosition: ['160% 0', '-160% 0'] }}
-      aria-hidden="true"
-      className={`skeleton-line ${className}`}
-      transition={{ duration: 1.25, ease: 'linear', repeat: Infinity }}
-    />
-  )
-}
-
-function StatsSkeleton() {
-  return (
-    <section className="stats-grid" aria-label="Đang tải thống kê">
-      {Array.from({ length: 4 }, (_, index) => (
-        <article className="stat-tile skeleton-tile" key={index}>
-          <SkeletonLine className="skeleton-icon" />
-          <div>
-            <SkeletonLine className="skeleton-label" />
-            <SkeletonLine className="skeleton-value" />
-          </div>
-        </article>
-      ))}
-    </section>
-  )
-}
 
 function TableSkeleton() {
   return (
@@ -258,21 +184,6 @@ function DrawerSkeleton() {
   )
 }
 
-function EmptyState({ error, onRetry }: { error: string; onRetry: () => void }) {
-  return (
-    <div className="empty-state">
-      <CircleAlert aria-hidden="true" size={30} />
-      <h2>{error ? 'Không tải được dữ liệu' : 'Chưa có lượt gửi'}</h2>
-      <p>{error || 'Chưa có dữ liệu phù hợp để hiển thị.'}</p>
-      {error ? (
-        <button className="secondary-button" onClick={onRetry} type="button">
-          <RefreshCw aria-hidden="true" size={16} />
-          <span>Tải lại</span>
-        </button>
-      ) : null}
-    </div>
-  )
-}
 
 const NOT_DELETABLE_TOOLTIP = 'Chỉ xóa được lượt gửi đang “Chờ tạo báo cáo” (chưa có PDF báo cáo).'
 
@@ -425,11 +336,13 @@ function SubmissionDetailDrawer({
   open: boolean
 }) {
   const title = detail?.fullName || (isLoading ? 'Đang tải' : 'Chi tiết lượt gửi')
+  const drawerRef = useRef<HTMLElement>(null)
+  useDialogKeyboard(open, drawerRef, { onEscape: onClose })
 
   return (
     <>
-      <button aria-label="Đóng chi tiết lượt gửi" className="drawer-backdrop" data-open={open} onClick={onClose} type="button" />
-      <aside className="detail-drawer" data-open={open} aria-label="Chi tiết lượt gửi">
+      <button aria-label="Đóng chi tiết lượt gửi" className="drawer-backdrop" data-open={open} inert={!open} onClick={onClose} tabIndex={-1} type="button" />
+      <aside aria-label="Chi tiết lượt gửi" aria-modal={open || undefined} className="detail-drawer" data-open={open} inert={!open} ref={drawerRef} role="dialog" tabIndex={-1}>
         <div className="drawer-header">
           <div>
             <p>Chi tiết lượt gửi</p>
@@ -498,7 +411,7 @@ function SubmissionDetailDrawer({
               </div>
               <div>
                 <CheckCircle2 aria-hidden="true" size={16} />
-                <span>{privacyLabels[detail.privacyConsent]}</span>
+                <span>{privacyConsentLabels[detail.privacyConsent]}</span>
               </div>
               <div className="detail-source">
                 <QrCode aria-hidden="true" size={16} />
@@ -855,7 +768,7 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
     <main className="dashboard-main">
       {tabs}
       {isLoading && !stats ? (
-        <StatsSkeleton />
+        <StatsSkeleton label="Đang tải thống kê" />
       ) : (
         <section className="stats-grid" aria-label="Thống kê khảo sát">
           <StatTile icon={<UsersRound aria-hidden="true" size={20} />} label="Tổng lượt gửi" tooltip="Tổng số lượt khảo sát đã được lưu trong hệ thống, bao gồm mọi trạng thái gửi." value={formatNumber(stats?.totalSubmissions ?? 0)} />
@@ -928,7 +841,7 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
         ) : null}
 
         {isLoading ? <TableSkeleton /> : null}
-        {!isLoading && (error || items.length === 0) ? <EmptyState error={error} onRetry={() => void loadPage()} /> : null}
+        {!isLoading && (error || items.length === 0) ? <EmptyState emptyText="Chưa có dữ liệu phù hợp để hiển thị." emptyTitle="Chưa có lượt gửi" error={error} onRetry={() => void loadPage()} /> : null}
         {!isLoading && !error && items.length > 0 ? <SubmissionTable deliveryStatuses={deliveryStatuses} items={items} onDeliveryChange={handleDeliveryChange} onReportRetry={handleReportRetry} onSelect={setSelectedId} selection={selection} /> : null}
 
         {!isLoading && !error && items.length > 0 ? (

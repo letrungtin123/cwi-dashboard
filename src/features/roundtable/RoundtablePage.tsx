@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Briefcase,
@@ -18,7 +18,6 @@ import {
   X,
 } from 'lucide-react'
 import {
-  apiUrl,
   getRoundtableRegistrationDetail,
   getRoundtableRegistrationStats,
   getWebinarRegistrationDetail,
@@ -27,7 +26,8 @@ import {
   listWebinarRegistrationsPage,
 } from '@/lib/api'
 import { useAuth } from '@/features/auth/AuthProvider'
-import { pausedReportTooltip } from '@/features/submissions/reportGenerationLabels'
+import { EmptyState, privacyConsentLabels, ReportBadge, ReportDownloadLink, SkeletonLine, StatsSkeleton, StatTile, StatusBadge } from '@/components/DataDisplay'
+import { useDialogKeyboard } from '@/lib/useDialogKeyboard'
 import { ExportDataButton } from '@/components/ExportDataButton'
 import { PublicLinkBar } from '@/components/PublicLinkBar'
 import { RoundtableEventSettings } from './RoundtableEventSettings'
@@ -38,14 +38,11 @@ import { CustomSelect, type SelectOption } from '@/components/CustomSelect'
 import { TablePagination } from '@/components/TablePagination'
 import type {
   ExportFilters,
-  PrivacyConsent,
-  ReportSummary,
   RoundtableLinkStatus,
   RoundtableRegistrationDetail,
   RoundtableRegistrationFilters,
   RoundtableRegistrationListItem,
   RoundtableRegistrationStats,
-  SubmissionStatus,
 } from '@/types'
 
 type LinkFilter = 'all' | RoundtableLinkStatus
@@ -62,26 +59,7 @@ const defaultPageSize = 10
 type PageCursor = string | null
 const searchDebounceMs = 350
 
-const statusMeta: Record<SubmissionStatus, { className: string; label: string }> = {
-  full_private_report: {
-    className: 'status-green',
-    label: 'Gửi đủ hai phần',
-  },
-  part1_only: {
-    className: 'status-blue',
-    label: 'Chỉ Phần 1',
-  },
-  part2_refused_privacy: {
-    className: 'status-amber',
-    label: 'Phần 2 không đồng ý',
-  },
-}
 
-const privacyLabels: Record<PrivacyConsent, string> = {
-  no: 'Không đồng ý',
-  not_applicable: 'Không áp dụng',
-  yes: 'Đồng ý',
-}
 
 function getLinkOptions(eventName: string): Array<SelectOption<LinkFilter>> {
   return [
@@ -118,15 +96,7 @@ function displayText(value: string | null | undefined, fallback = 'Chưa có d�
   return normalized || fallback
 }
 
-function StatusBadge({ status }: { status: SubmissionStatus }) {
-  const meta = statusMeta[status]
-  return <span className={`status-badge ${meta.className}`}>{meta.label}</span>
-}
 
-function ReportBadge({ report }: { report: ReportSummary }) {
-  if (report.generationPaused) return <span className="report-badge report-paused" data-tooltip={pausedReportTooltip} data-tooltip-wide>{report.label}</span>
-  return <span className={`report-badge report-${report.status}`}>{report.label}</span>
-}
 
 function LinkBadge({ linked }: { linked: boolean }) {
   return (
@@ -136,56 +106,9 @@ function LinkBadge({ linked }: { linked: boolean }) {
   )
 }
 
-function ReportDownloadLink({ report }: { report: ReportSummary }) {
-  const { user } = useAuth()
-  if (!report.pdfDownloadUrl || !canManageContent(user?.role)) return null
 
-  return (
-    <a className="mini-link-button" data-tooltip="Tải báo cáo PDF" href={apiUrl(report.pdfDownloadUrl)} rel="noreferrer" target="_blank">
-      <FileText aria-hidden="true" size={15} />
-      <span>Tải PDF</span>
-    </a>
-  )
-}
 
-function StatTile({ icon, label, tooltip, value }: { icon: ReactNode; label: string; tooltip: string; value: string }) {
-  return (
-    <article aria-label={`${label}: ${value}. ${tooltip}`} className="stat-tile" data-tooltip={tooltip} data-tooltip-wide tabIndex={0}>
-      <div className="stat-icon">{icon}</div>
-      <div>
-        <p>{label}</p>
-        <strong>{value}</strong>
-      </div>
-    </article>
-  )
-}
 
-function SkeletonLine({ className = '' }: { className?: string }) {
-  return (
-    <motion.span
-      animate={{ backgroundPosition: ['160% 0', '-160% 0'] }}
-      aria-hidden="true"
-      className={`skeleton-line ${className}`}
-      transition={{ duration: 1.25, ease: 'linear', repeat: Infinity }}
-    />
-  )
-}
-
-function StatsSkeleton({ eventName }: { eventName: string }) {
-  return (
-    <section className="stats-grid" aria-label={`Đang tải thống kê ${eventName}`}>
-      {Array.from({ length: 4 }, (_, index) => (
-        <article className="stat-tile skeleton-tile" key={index}>
-          <SkeletonLine className="skeleton-icon" />
-          <div>
-            <SkeletonLine className="skeleton-label" />
-            <SkeletonLine className="skeleton-value" />
-          </div>
-        </article>
-      ))}
-    </section>
-  )
-}
 
 function TableSkeleton({ eventName }: { eventName: string }) {
   return (
@@ -231,21 +154,6 @@ function DrawerSkeleton({ eventName }: { eventName: string }) {
   )
 }
 
-function EmptyState({ error, eventName, onRetry }: { error: string; eventName: string; onRetry: () => void }) {
-  return (
-    <div className="empty-state">
-      <CircleAlert aria-hidden="true" size={30} />
-      <h2>{error ? 'Không tải được dữ liệu' : `Chưa có đăng ký ${eventName}`}</h2>
-      <p>{error || 'Chưa có dữ liệu phù hợp với bộ lọc hiện tại.'}</p>
-      {error ? (
-        <button className="secondary-button" onClick={onRetry} type="button">
-          <RefreshCw aria-hidden="true" size={16} />
-          <span>Tải lại</span>
-        </button>
-      ) : null}
-    </div>
-  )
-}
 
 function RoundtableTable({ items, onSelect }: { items: RoundtableRegistrationListItem[]; onSelect: (id: string) => void }) {
   return (
@@ -369,11 +277,13 @@ function RoundtableDetailDrawer({
 }) {
   const title = detail?.fullName || (isLoading ? 'Đang tải' : `Chi tiết ${eventName}`)
   const linkedSubmission = detail?.linkedSubmission ?? null
+  const drawerRef = useRef<HTMLElement>(null)
+  useDialogKeyboard(open, drawerRef, { onEscape: onClose })
 
   return (
     <>
-      <button aria-label={`Đóng chi tiết ${eventName}`} className="drawer-backdrop" data-open={open} onClick={onClose} type="button" />
-      <aside className="detail-drawer" data-open={open} aria-label={`Chi tiết đăng ký ${eventName}`}>
+      <button aria-label={`Đóng chi tiết ${eventName}`} className="drawer-backdrop" data-open={open} inert={!open} onClick={onClose} tabIndex={-1} type="button" />
+      <aside aria-label={`Chi tiết đăng ký ${eventName}`} aria-modal={open || undefined} className="detail-drawer" data-open={open} inert={!open} ref={drawerRef} role="dialog" tabIndex={-1}>
         <div className="drawer-header">
           <div>
             <p>Chi tiết {eventName}</p>
@@ -462,7 +372,7 @@ function RoundtableDetailDrawer({
                   </div>
                   <p>{linkedSubmission.statusNote}</p>
                   <div className="detail-report-actions">
-                    <ReportDownloadLink report={linkedSubmission.report} />
+                    <ReportDownloadLink icon={<FileText aria-hidden="true" size={15} />} report={linkedSubmission.report} />
                     {linkedSubmission.report.errorMessage ? <span className="report-error-note">{linkedSubmission.report.errorMessage}</span> : null}
                   </div>
                   <dl className="meta-list compact">
@@ -472,7 +382,7 @@ function RoundtableDetailDrawer({
                     </div>
                     <div>
                       <dt>Đồng ý bảo mật</dt>
-                      <dd>{privacyLabels[linkedSubmission.privacyConsent]}</dd>
+                      <dd>{privacyConsentLabels[linkedSubmission.privacyConsent]}</dd>
                     </div>
                     <div>
                       <dt>ID khảo sát</dt>
@@ -659,7 +569,7 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
   return (
     <main className="dashboard-main">
       {isLoading && !stats ? (
-        <StatsSkeleton eventName={eventName} />
+        <StatsSkeleton label={`Đang tải thống kê ${eventName}`} />
       ) : (
         <section className="stats-grid" aria-label={`Thống kê ${eventName}`}>
           <StatTile icon={<UsersRound aria-hidden="true" size={20} />} label="Tổng đăng ký" tooltip={`Tổng số lượt đăng ký ${eventTitle} đã được ghi nhận, gồm cả đăng ký riêng và đăng ký đã khảo sát.`} value={formatNumber(stats?.totalRegistrations ?? 0)} />
@@ -711,7 +621,7 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
         </div>
 
         {isLoading ? <TableSkeleton eventName={eventName} /> : null}
-        {!isLoading && (error || items.length === 0) ? <EmptyState error={error} eventName={eventName} onRetry={() => void loadPage()} /> : null}
+        {!isLoading && (error || items.length === 0) ? <EmptyState emptyText="Chưa có dữ liệu phù hợp với bộ lọc hiện tại." emptyTitle={`Chưa có đăng ký ${eventName}`} error={error} onRetry={() => void loadPage()} /> : null}
         {!isLoading && !error && items.length > 0 ? <RoundtableTable items={items} onSelect={setSelectedId} /> : null}
 
         {!isLoading && !error && items.length > 0 ? (

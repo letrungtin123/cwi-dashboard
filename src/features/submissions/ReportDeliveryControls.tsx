@@ -1,26 +1,10 @@
 import { useRef, useState, type ChangeEvent } from 'react'
-import { CheckCircle2, Download, FileText, LockKeyhole, RotateCcw, Upload, XCircle } from 'lucide-react'
+import { Download, FileText, LockKeyhole, RotateCcw, Upload, XCircle } from 'lucide-react'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { apiUrl, retryReportEmail, retryReportGeneration, uploadReportPdf } from '@/lib/api'
 import { canManageContent } from '@/lib/roles'
 import type { ReportDeliveryStatus, ReportSummary } from '@/types'
 import { pausedReportTooltip } from './reportGenerationLabels'
-
-function formatBytes(value: number | null) {
-  if (!value) return ''
-  if (value < 1024 * 1024) return Math.ceil(value / 1024) + ' KB'
-  return (value / (1024 * 1024)).toFixed(1) + ' MB'
-}
-
-function emailStatusLabel(status: ReportDeliveryStatus['emailStatus']) {
-  if (status === 'sent') return 'Đã gửi email'
-  if (status === 'sending') return 'Đang gửi email'
-  if (status === 'queued') return 'Đang chờ gửi'
-  if (status === 'failed') return 'Gửi lỗi, sẽ thử lại'
-  if (status === 'unknown') return 'Cần kiểm tra trước khi gửi lại'
-  return 'Chưa gửi email'
-}
-
 
 export function ReportDeliveryTableCell({
   actionOnly = false,
@@ -213,83 +197,5 @@ export function ReportDeliveryFileStatus({ report, status }: { report: ReportSum
       <FileText aria-hidden="true" size={15} />
       <span>{status.file.fileName ?? 'bao-cao.pdf'}</span>
     </span>
-  )
-}
-
-export function ReportDeliveryControls({
-  onChanged,
-  status,
-  submissionId,
-}: {
-  onChanged: (status: ReportDeliveryStatus) => void
-  status: ReportDeliveryStatus | null
-  submissionId: string
-}) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [isUploading, setIsUploading] = useState(false)
-  const [error, setError] = useState('')
-  const file = status?.file
-  const locked = Boolean(file?.lockedAt) || status?.emailStatus === 'sent' || status?.emailStatus === 'sending'
-  const emailLabel = emailStatusLabel(status?.emailStatus ?? 'not_ready')
-
-  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const selected = event.target.files?.[0]
-    event.target.value = ''
-    if (!selected) return
-    if (selected.type !== 'application/pdf' && !selected.name.toLowerCase().endsWith('.pdf')) {
-      setError('Chỉ chấp nhận file PDF.')
-      return
-    }
-    setError('')
-    setIsUploading(true)
-    try {
-      onChanged(await uploadReportPdf(submissionId, selected))
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Không tải được file PDF lên.')
-    } finally {
-      setIsUploading(false)
-    }
-  }
-
-  return (
-    <section className="report-delivery-panel">
-      <div className="report-delivery-heading">
-        <div>
-          <h3>File báo cáo gửi cho người tham gia</h3>
-          <p>Mỗi lượt gửi chỉ dùng một file PDF. Sau khi gửi email, file sẽ được khóa.</p>
-        </div>
-        <span className={status?.emailStatus === 'sent' ? 'delivery-state is-sent' : 'delivery-state'}>
-          {status?.emailStatus === 'sent' ? <CheckCircle2 aria-hidden="true" size={15} /> : <XCircle aria-hidden="true" size={15} />}
-          {emailLabel}
-        </span>
-      </div>
-
-      {file?.available ? (
-        <div className="report-file-row">
-          <div className="report-file-copy">
-            <strong>{file.fileName}</strong>
-            <span>{formatBytes(file.fileSize)}{file.lockedAt ? ' · Đã khóa thay thế' : ''}</span>
-          </div>
-          {file.downloadUrl ? (
-            <a className="mini-link-button" href={apiUrl(file.downloadUrl)} rel="noreferrer" target="_blank">
-              <Download aria-hidden="true" size={15} />
-              <span>Xem file</span>
-            </a>
-          ) : null}
-        </div>
-      ) : (
-        <p className="report-file-empty">Chưa có file PDF cho lượt gửi này.</p>
-      )}
-
-      <div className="report-delivery-actions">
-        <input ref={inputRef} accept="application/pdf,.pdf" className="sr-only" onChange={(event) => void handleFileChange(event)} type="file" />
-        <button className="secondary-button" disabled={locked || isUploading} onClick={() => inputRef.current?.click()} type="button">
-          {locked ? <LockKeyhole aria-hidden="true" size={16} /> : <Upload aria-hidden="true" size={16} />}
-          <span>{locked ? 'Đã khóa file' : file?.available ? 'Thay file PDF' : 'Tải file PDF lên'}</span>
-        </button>
-        {isUploading ? <span className="report-uploading">Đang tải lên...</span> : null}
-      </div>
-      {error ? <p className="report-delivery-error">{error}</p> : null}
-    </section>
   )
 }

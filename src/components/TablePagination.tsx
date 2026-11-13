@@ -36,7 +36,9 @@ export function TablePagination({
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
     }
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      setOpen(false)
     }
 
     document.addEventListener('pointerdown', handlePointerDown)
