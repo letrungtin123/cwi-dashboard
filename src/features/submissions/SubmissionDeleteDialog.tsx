@@ -1,13 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AlertTriangle, X } from 'lucide-react'
 import { deleteSubmissions, previewSubmissionDeletion } from '@/lib/api'
 import { formatDateTime } from '@/lib/format'
+import { useDialogKeyboard } from '@/lib/useDialogKeyboard'
 import type { SubmissionDeletionItem } from '@/types'
 
 // Confirms deleting the selected submissions whose report is still waiting. The
 // server checks each one again; rows that can no longer be deleted are listed
 // and left out.
 export function SubmissionDeleteDialog({ ids, onClose, onDeleted }: { ids: string[]; onClose: () => void; onDeleted: (count: number) => void }) {
+  const dialogRef = useRef<HTMLElement>(null)
+  useDialogKeyboard(true, dialogRef, { onEscape: onClose })
   const [items, setItems] = useState<SubmissionDeletionItem[] | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -39,7 +42,7 @@ export function SubmissionDeleteDialog({ ids, onClose, onDeleted }: { ids: strin
 
   return (
     <div className="report-modal-backdrop" role="presentation">
-      <section aria-labelledby="submission-delete-title" aria-modal="true" className="report-modal submission-delete-dialog" role="alertdialog">
+      <section aria-labelledby="submission-delete-title" aria-modal="true" className="report-modal submission-delete-dialog" role="alertdialog" ref={dialogRef} tabIndex={-1}>
         <div className="report-modal-header">
           <div>
             <p>Lượt gửi khảo sát</p>

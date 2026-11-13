@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { CircleAlert, Copy, Eye, History, Pause, Pencil, Play, Plus, QrCode, RefreshCw, Trash2, X } from 'lucide-react'
 import { CustomSelect, type SelectOption } from '@/components/CustomSelect'
 import { createSurveySource, deleteSurveySource, getSubmissionStats, listSurveySources, updateSurveySource } from '@/lib/api'
 import { formatDateTime, formatNumber } from '@/lib/format'
 import { personName } from '@/lib/roles'
 import { copyText, downloadQrCode } from '@/lib/shareLink'
+import { useDialogKeyboard } from '@/lib/useDialogKeyboard'
 import type { SubmissionStats, SurveySource, SurveySourceList } from '@/types'
 import { SurveySourceFormDialog, type SurveySourceFormValues } from './SurveySourceFormDialog'
 import { SurveySourceHistoryDialog } from './SurveySourceHistoryDialog'
@@ -29,10 +30,12 @@ function buildQuarterOptions(stats: SubmissionStats | null): Array<SelectOption<
 }
 
 function ConfirmDialog({ busy, confirm, error, onClose, onConfirm }: { busy: boolean; confirm: ConfirmState; error: string; onClose: () => void; onConfirm: () => void }) {
+  const dialogRef = useRef<HTMLElement>(null)
+  useDialogKeyboard(true, dialogRef, { onEscape: onClose })
   const isDelete = confirm.action === 'delete'
   return (
     <div className="report-modal-backdrop" role="presentation">
-      <section aria-labelledby="survey-source-confirm-title" aria-modal="true" className="report-modal survey-source-dialog" role="alertdialog">
+      <section aria-labelledby="survey-source-confirm-title" aria-modal="true" className="report-modal survey-source-dialog" role="alertdialog" ref={dialogRef} tabIndex={-1}>
         <div className="report-modal-header">
           <div>
             <p>Nguồn mời</p>

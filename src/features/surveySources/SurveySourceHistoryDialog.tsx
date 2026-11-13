@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { History, X } from 'lucide-react'
 import { getSurveySourceHistory } from '@/lib/api'
 import { formatDateTime } from '@/lib/format'
 import { personName } from '@/lib/roles'
+import { useDialogKeyboard } from '@/lib/useDialogKeyboard'
 import type { AuditEntry, SurveySource } from '@/types'
 
 type Change = { from?: unknown; to?: unknown }
@@ -41,6 +42,8 @@ export function describeSurveySourceChange(entry: AuditEntry): { lines: string[]
 }
 
 export function SurveySourceHistoryDialog({ onClose, source }: { onClose: () => void; source: SurveySource }) {
+  const dialogRef = useRef<HTMLElement>(null)
+  useDialogKeyboard(true, dialogRef, { onEscape: onClose })
   const [items, setItems] = useState<AuditEntry[] | null>(null)
   const [error, setError] = useState('')
 
@@ -54,7 +57,7 @@ export function SurveySourceHistoryDialog({ onClose, source }: { onClose: () => 
 
   return (
     <div className="report-modal-backdrop" role="presentation">
-      <section aria-labelledby="survey-source-history-title" aria-modal="true" className="report-modal survey-source-dialog survey-source-history" role="dialog">
+      <section aria-labelledby="survey-source-history-title" aria-modal="true" className="report-modal survey-source-dialog survey-source-history" role="dialog" ref={dialogRef} tabIndex={-1}>
         <div className="report-modal-header">
           <div>
             <p>Lịch sử nguồn mời</p>

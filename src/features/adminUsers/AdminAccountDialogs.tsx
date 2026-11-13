@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { Check, Copy, KeyRound, X } from 'lucide-react'
 import { copyText } from '@/lib/shareLink'
 import { ROLE_DESCRIPTIONS, ROLE_LABELS } from '@/lib/roles'
+import { useDialogKeyboard } from '@/lib/useDialogKeyboard'
 import type { AdminAccount, AdminRole } from '@/types'
 
 export type AdminAccountFormValues = { displayName: string; email: string; role: AdminRole }
@@ -31,6 +32,8 @@ export function AdminAccountFormDialog({
   onClose: () => void
   onSubmit: (values: AdminAccountFormValues) => void
 }) {
+  const dialogRef = useRef<HTMLFormElement>(null)
+  useDialogKeyboard(true, dialogRef, { onEscape: onClose })
   const [displayName, setDisplayName] = useState(account?.displayName ?? '')
   const [email, setEmail] = useState(account?.email ?? '')
   const [role, setRole] = useState<AdminRole>(account?.role ?? 'viewer')
@@ -45,7 +48,7 @@ export function AdminAccountFormDialog({
 
   return (
     <div className="report-modal-backdrop" role="presentation">
-      <form aria-labelledby="admin-account-dialog-title" aria-modal="true" className="report-modal survey-source-dialog admin-account-dialog" onSubmit={submit} role="dialog">
+      <form aria-labelledby="admin-account-dialog-title" aria-modal="true" className="report-modal survey-source-dialog admin-account-dialog" onSubmit={submit} role="dialog" ref={dialogRef} tabIndex={-1}>
         <div className="report-modal-header">
           <div>
             <p>Quản lý quản trị viên</p>
@@ -119,6 +122,9 @@ export function TemporaryPasswordDialog({
   onClose: () => void
   password: string
 }) {
+  // No Escape here: the password is shown only once, so closing takes a deliberate click.
+  const dialogRef = useRef<HTMLElement>(null)
+  useDialogKeyboard(true, dialogRef)
   const [copied, setCopied] = useState(false)
   const [copyError, setCopyError] = useState(false)
 
@@ -134,7 +140,7 @@ export function TemporaryPasswordDialog({
 
   return (
     <div className="report-modal-backdrop" role="presentation">
-      <section aria-labelledby="temporary-password-title" aria-modal="true" className="report-modal survey-source-dialog" role="dialog">
+      <section aria-labelledby="temporary-password-title" aria-modal="true" className="report-modal survey-source-dialog" role="dialog" ref={dialogRef} tabIndex={-1}>
         <div className="report-modal-header">
           <div>
             <p>{account.displayName || account.email}</p>
@@ -176,11 +182,13 @@ export function TemporaryPasswordDialog({
 export type AccountConfirm = { action: 'lock' | 'reset'; account: AdminAccount }
 
 export function AccountConfirmDialog({ busy, confirm, error, onClose, onConfirm }: { busy: boolean; confirm: AccountConfirm; error: string; onClose: () => void; onConfirm: () => void }) {
+  const dialogRef = useRef<HTMLElement>(null)
+  useDialogKeyboard(true, dialogRef, { onEscape: onClose })
   const name = confirm.account.displayName || confirm.account.email
   const isLock = confirm.action === 'lock'
   return (
     <div className="report-modal-backdrop" role="presentation">
-      <section aria-labelledby="admin-account-confirm-title" aria-modal="true" className="report-modal survey-source-dialog" role="alertdialog">
+      <section aria-labelledby="admin-account-confirm-title" aria-modal="true" className="report-modal survey-source-dialog" role="alertdialog" ref={dialogRef} tabIndex={-1}>
         <div className="report-modal-header">
           <div>
             <p>Quản lý quản trị viên</p>

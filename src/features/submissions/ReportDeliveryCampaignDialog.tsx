@@ -1,5 +1,7 @@
+import { useRef } from 'react'
 import { CircleAlert, Mail, X } from 'lucide-react'
 import { formatNumber } from '@/lib/format'
+import { useDialogKeyboard } from '@/lib/useDialogKeyboard'
 import type { ReportDeliveryCampaign } from '@/types'
 
 function statusLabel(status: ReportDeliveryCampaign['status']) {
@@ -26,12 +28,14 @@ export function ReportDeliveryCampaignDialog({
   onConfirm: () => void
   open: boolean
 }) {
+  const dialogRef = useRef<HTMLElement>(null)
+  useDialogKeyboard(open && Boolean(campaign), dialogRef, { onEscape: onClose })
   if (!open || !campaign) return null
   const canConfirm = campaign.status === 'draft' && campaign.eligibleUsers > 0 && !busy
   const isActive = ['queued', 'dispatching', 'sending'].includes(campaign.status)
   return (
     <div className="report-modal-backdrop" role="presentation">
-      <section aria-labelledby="report-delivery-dialog-title" aria-modal="true" className="report-modal" role="dialog">
+      <section aria-labelledby="report-delivery-dialog-title" aria-modal="true" className="report-modal" role="dialog" ref={dialogRef} tabIndex={-1}>
         <div className="report-modal-header">
           <div>
             <p>Gửi báo cáo khảo sát</p>
