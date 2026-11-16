@@ -10,7 +10,7 @@ type PendingChange = 'pause' | 'resume' | null
 const padDays = (days: number) => String(days).padStart(2, '0')
 
 // Same sentence the survey shows after submitting while report creation is paused
-// (source4 ReportDeferredScreen), so the admin sees exactly what participants read.
+// (cwi-fe-landing-page ReportDeferredScreen), so the admin sees exactly what participants read.
 const participantMessage = (days: number) => `Báo cáo cá nhân sẽ được gửi đến email Anh/Chị sau ${padDays(days)} ngày tới.`
 
 // Switch for calling cwi-ai, worded for non-technical admins. While it is off, new

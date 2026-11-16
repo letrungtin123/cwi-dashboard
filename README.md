@@ -1,54 +1,23 @@
-# CWI Dashboard
+# cwi-fe-dashboard
 
-Admin dashboard of CEO Workforce Index, served at `/dashboard/`. Admins use it to:
+Trang quản trị của CEO Workforce Index: theo dõi lượt khảo sát, báo cáo và email gửi kết quả; đăng ký Roundtable/Webinar; báo cáo quý; nguồn mời; tài khoản quản trị. Phân quyền Super Admin, Admin, Viewer.
 
-- follow survey submissions, personal reports and result e-mails, and pause or resume report creation;
-- manage invitation sources (links and QR codes per inviting partner);
-- see CEO Roundtable and Webinar registrations and export them to Excel;
-- upload quarterly reports and see who downloaded them;
-- manage admin accounts (super admin only).
+React 19, TypeScript, Vite, Tailwind CSS.
 
-Roles: **Super Admin** (everything, including accounts and deleting test submissions), **Admin** (all content), **Viewer** (read only; no downloads or exports).
+## Chạy local
 
-Stack: React 19, TypeScript, Vite, Tailwind CSS 4.
-
-## Run locally
-
-```powershell
+```bash
 npm install
-Copy-Item .env.example .env
-npm run dev          # http://127.0.0.1:5680
+cp .env.example .env    # VITE_API_BASE_URL trỏ tới cwi-backend
+npm run dev             # http://localhost:5680
 ```
 
-| Variable | Purpose |
+## Lệnh
+
+| Lệnh | Việc |
 | --- | --- |
-| `VITE_API_BASE_URL` | Backend origin, e.g. `http://localhost:8088` locally. |
-| `VITE_CSRF_COOKIE_NAME` | Name of the CSRF cookie set by the backend. |
-| `VITE_LANDING_BASE_URL` | Public landing origin, used to build survey and registration links. |
+| `npm run build` | Typecheck và build vào `dist/` (phục vụ ở đường dẫn `/dashboard/`) |
+| `npm run lint` | oxlint |
+| `npm test` | vitest |
 
-Sign-in uses the backend session: an httpOnly cookie plus a CSRF token sent on every change. The dashboard never holds database URLs, service keys or API keys.
-
-## Scripts
-
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Development server with hot reload. |
-| `npm run build` | Type-check and build into `dist/`. |
-| `npm run preview` | Serve the built `dist/` locally. |
-| `npm run lint` | Lint with oxlint. |
-
-## Project layout
-
-```
-src/
-  App.tsx            sign-in gate and section switching
-  components/        shell (sidebar), shared controls
-  features/          one folder per section: submissions, surveySources, roundtable, webinar,
-                     quarterlyReports, adminUsers, auth
-  lib/               API client, roles, formatting helpers
-  types.ts           API response types
-```
-
-## Deployment
-
-Production serves only the built `dist/` folder, packaged together with `source4` and `cwi-backend` into one release. See [DEPLOYMENT_ARTIFACT.md](DEPLOYMENT_ARTIFACT.md).
+Production phục vụ thư mục `dist/`, được đóng gói cùng backend (xem `cwi-backend/deploy/README.md`).
