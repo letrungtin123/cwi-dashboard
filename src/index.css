@@ -3729,35 +3729,19 @@ tbody tr:hover {
 }
 
 /* Quarterly report upload and lead list. */
-.quarterly-report-upload .surface-head {
-  background: linear-gradient(108deg, #fff 0%, #f4f8ff 100%);
-}
-
-.quarterly-report-upload-form {
-  display: grid;
-  gap: 20px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  padding: 26px 28px 28px;
-}
 
 .quarterly-report-period-field,
-.quarterly-report-copy-field,
 .quarterly-report-file-field {
   display: grid;
   gap: 8px;
 }
 
 .quarterly-report-period-field > span,
-.quarterly-report-copy-field > span,
 .quarterly-report-file-field > span {
   color: #17416f;
   font-size: 12px;
   font-weight: 850;
   letter-spacing: 0.01em;
-}
-
-.quarterly-report-upload-form b {
-  color: #e02032;
 }
 
 .quarterly-report-year-control {
@@ -3772,8 +3756,7 @@ tbody tr:hover {
   transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
-.quarterly-report-year-control:focus-within,
-.quarterly-report-copy-field input:focus {
+.quarterly-report-year-control:focus-within {
   background: #fff;
   border-color: #2087ce;
   box-shadow: 0 0 0 3px rgba(32, 135, 206, 0.12);
@@ -3878,22 +3861,6 @@ tbody tr:hover {
 .quarterly-report-quarter-picker button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
-}
-
-.quarterly-report-copy-field input {
-  background: #fbfdff;
-  border: 1px solid #c4d8ef;
-  border-radius: 8px;
-  color: #173a60;
-  font: inherit;
-  min-height: 48px;
-  outline: 0;
-  padding: 0 14px;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
-}
-
-.quarterly-report-copy-field input::placeholder {
-  color: #90a2b7;
 }
 
 .quarterly-report-file-dropzone {
@@ -4022,192 +3989,27 @@ tbody tr:hover {
   color: #bd2635;
 }
 
-.quarterly-report-upload-form small,
-.quarterly-report-table td span,
 .quarterly-download-table td small {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.45;
 }
 
-.quarterly-report-wide,
-.quarterly-report-file-field,
-.quarterly-report-toggle,
-.quarterly-report-message,
-.quarterly-report-upload-actions {
-  grid-column: 1 / -1;
-}
-
-.quarterly-report-toggle {
-  align-items: center;
-  background: #f7fbff;
-  border: 1px solid #d4e4f5;
-  border-radius: 7px;
-  color: inherit;
-  cursor: pointer;
-  display: flex !important;
-  gap: 13px;
-  padding: 15px 16px;
-  text-align: left;
-  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
-}
-
-.quarterly-report-toggle:hover:not(:disabled) {
-  background: #f1f8ff;
-  border-color: #a9c9e9;
-}
-
-.quarterly-report-toggle:focus-visible {
-  box-shadow: 0 0 0 3px rgba(32, 135, 206, 0.14);
-  outline: 0;
-}
-
-.quarterly-report-toggle:disabled {
-  cursor: wait;
-  opacity: 0.65;
-}
-
-.quarterly-report-toggle > span:last-child {
-  display: grid;
-  gap: 3px;
-}
-
-.quarterly-report-toggle strong {
-  color: #173f70;
-  font-size: 13px;
-}
-
-.quarterly-report-switch {
-  align-items: center;
-  background: #b9c8d8;
-  border-radius: 999px;
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 24px;
-  padding: 3px;
-  transition: background 0.18s ease;
-  width: 42px;
-}
-
-.quarterly-report-switch > span {
-  align-items: center;
-  background: #fff;
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(12, 44, 77, 0.22);
-  color: transparent;
-  display: inline-flex;
-  height: 18px;
-  justify-content: center;
-  transform: translateX(0);
-  transition: color 0.18s ease, transform 0.18s ease;
-  width: 18px;
-}
-
-.quarterly-report-toggle[aria-checked="true"] .quarterly-report-switch {
-  background: #0f8b7b;
-}
-
-.quarterly-report-toggle[aria-checked="true"] .quarterly-report-switch > span {
-  color: #0f8b7b;
-  transform: translateX(18px);
-}
-
-.quarterly-report-message {
-  align-items: center;
-  border-radius: 7px;
-  display: flex;
-  font-size: 13px;
-  margin: 0;
-  padding: 10px 12px;
-}
-
-.quarterly-report-message.is-error,
 .quarterly-report-page-error {
   background: #fff5f5;
   border: 1px solid #ffd0d0;
   color: #a91d2d;
 }
 
-.quarterly-report-message.is-success {
-  background: #effcf8;
-  border: 1px solid #bdeee0;
-  color: #11735d;
-  gap: 7px;
-}
-
-.quarterly-report-upload-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-.quarterly-report-table,
 .quarterly-download-table {
   min-width: 880px;
   width: 100%;
 }
 
-.quarterly-report-table {
-  table-layout: fixed;
-}
-
-.quarterly-report-table th:nth-child(1) { width: 29%; }
-.quarterly-report-table th:nth-child(2) { width: 16%; }
-.quarterly-report-table th:nth-child(3) { width: 24%; }
-.quarterly-report-table th:nth-child(4) { width: 15%; }
-.quarterly-report-table th:nth-child(5) { width: 16%; }
-
-.quarterly-report-table td strong,
-.quarterly-report-table td span,
 .quarterly-download-table td strong,
 .quarterly-download-table td span,
 .quarterly-download-table td small {
   display: block;
-}
-
-.quarterly-report-file-cell {
-  min-width: 0;
-}
-
-.quarterly-report-file-entry {
-  align-items: center;
-  display: grid;
-  gap: 10px;
-  grid-template-columns: 34px minmax(0, 1fr);
-  min-width: 0;
-}
-
-.quarterly-report-file-entry > div {
-  min-width: 0;
-}
-
-.quarterly-report-table td .quarterly-report-file-entry-icon {
-  align-items: center;
-  background: #e8f5f2;
-  border: 1px solid #c9ece2;
-  border-radius: 7px;
-  color: #087a6a;
-  display: inline-flex;
-  height: 34px;
-  justify-content: center;
-  width: 34px;
-}
-
-.quarterly-report-file-entry strong {
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  display: -webkit-box !important;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  word-break: break-word;
-}
-
-.quarterly-report-file-entry small {
-  color: var(--muted);
-  display: block;
-  font-size: 12px;
-  line-height: 1.45;
-  margin-top: 3px;
 }
 
 .quarterly-report-status {
@@ -4247,19 +4049,6 @@ tbody tr:hover {
   text-decoration: underline;
 }
 
-.quarterly-report-url-actions {
-  align-items: center;
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.quarterly-report-download-qr:disabled {
-  cursor: wait;
-  opacity: 0.62;
-  text-decoration: none;
-}
-
 .quarterly-report-empty {
   color: var(--muted);
   padding: 28px !important;
@@ -4278,11 +4067,6 @@ tbody tr:hover {
 }
 
 @media (max-width: 720px) {
-  .quarterly-report-upload-form {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    padding: 18px 16px 20px;
-  }
 
   .quarterly-report-file-dropzone {
     align-items: start;
@@ -4303,16 +4087,6 @@ tbody tr:hover {
   .quarterly-report-file-actions > button:first-child {
     flex: 1 1 auto;
     justify-content: center;
-  }
-
-  .quarterly-report-upload-actions {
-    flex-direction: column-reverse;
-  }
-
-  .quarterly-report-upload-actions .primary-button,
-  .quarterly-report-upload-actions .secondary-button {
-    justify-content: center;
-    width: 100%;
   }
 
   .quarterly-download-stats {
@@ -5439,9 +5213,6 @@ tr.is-selected > td {
 }
 
 /* Quarterly reports, viewer accounts: copy URL / QR messages above the list. */
-.quarterly-report-message.quarterly-report-list-message {
-  margin: 14px 22px 0;
-}
 
 /* Sign-in screen: shown after the server ended the session. */
 .form-notice {
@@ -5804,4 +5575,117 @@ tr.is-selected > td {
   .quarter-intro .report-generation-notice {
     margin: 0 16px 16px;
   }
+}
+
+/* Quarterly reports ("Báo cáo quý"): add a quarter, and per quarter its two PDFs and ads links. */
+.quarterly-report-add .surface-head {
+  background: linear-gradient(108deg, #fff 0%, #f4f8ff 100%);
+}
+
+.quarterly-report-add-form {
+  align-items: end;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto;
+  padding: 22px 28px 8px;
+}
+
+.quarterly-report-add > .quarter-help,
+.quarterly-report-add > .roundtable-event-error {
+  margin: 0;
+  padding: 0 28px 22px;
+}
+
+.quarterly-report-add-button {
+  min-height: 46px;
+}
+
+.quarterly-report-slots {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.quarterly-report-slot .quarterly-report-file-dropzone {
+  min-height: 92px;
+}
+
+.quarterly-report-slot .quarterly-report-file-dropzone.has-file {
+  cursor: default;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.quarterly-report-slot .quarterly-report-file-summary strong {
+  overflow-wrap: anywhere;
+}
+
+.quarterly-report-slot .quarterly-report-file-actions .mini-link-button {
+  text-decoration: none;
+}
+
+.quarterly-report-links {
+  border: 1px solid #dbe6f2;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.quarterly-report-links > strong {
+  color: #17416f;
+  font-size: 13px;
+}
+
+.quarterly-report-link {
+  align-items: center;
+  display: grid;
+  gap: 6px 14px;
+  grid-template-columns: 130px minmax(0, 1fr) auto;
+}
+
+.quarterly-report-link-label {
+  color: #4b6584;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.quarterly-report-link .survey-source-link-actions {
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 900px) {
+  .quarterly-report-add-form,
+  .quarterly-report-slots {
+    grid-template-columns: minmax(0, 1fr);
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .quarterly-report-slots {
+    padding: 0;
+  }
+
+  .quarterly-report-add > .quarter-help,
+  .quarterly-report-add > .roundtable-event-error {
+    padding: 0 18px 18px;
+  }
+
+  .quarterly-report-link {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .quarterly-report-link .survey-source-link-actions {
+    flex-wrap: wrap;
+  }
+}
+
+/* Survey sources: submissions per quarter under the total, and the note on links per quarter. */
+.survey-source-per-quarter {
+  color: #5b6f86;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.survey-sources-link-help {
+  margin: -6px 0 14px;
 }

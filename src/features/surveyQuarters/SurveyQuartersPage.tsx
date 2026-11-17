@@ -1,13 +1,10 @@
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import { ChevronDown, CircleAlert, History, ImagePlus, RefreshCw, Save, Trash2 } from 'lucide-react'
-import { apiUrl, deleteSurveyQuarterImage, listSurveyQuarters, SURVEY_QUARTER_IMAGE_TYPES, updateSurveyQuarter, updateSurveyQuarterPage, uploadSurveyQuarterImage } from '@/lib/api'
+import { useCallback, useEffect, useId, useState, type ReactNode } from 'react'
+import { CircleAlert, History, RefreshCw, Save } from 'lucide-react'
+import { deleteSurveyQuarterImage, listSurveyQuarters, updateSurveyQuarter, updateSurveyQuarterPage, uploadSurveyQuarterImage } from '@/lib/api'
 import { formatDateTime, formatNumber } from '@/lib/format'
-import type { Bilingual, SurveyQuarterAdmin, SurveyQuarterAdminList, SurveyQuarterPageContent } from '@/types'
+import type { SurveyQuarterAdmin, SurveyQuarterAdminList } from '@/types'
+import { AccordionHead, BilingualField, CardHeadingEditor, CardImageEditor, errorMessage, sameBilingual } from './cardEditorParts'
 import { SurveyQuarterHistoryDialog } from './SurveyQuarterHistoryDialog'
-
-function errorMessage(caught: unknown, fallback: string) {
-  return caught instanceof Error && caught.message ? caught.message : fallback
-}
 
 // The survey waiting page writes the day count with two digits ("07 ngày").
 const padDays = (days: number) => String(days).padStart(2, '0')
@@ -15,105 +12,6 @@ const padDays = (days: number) => String(days).padStart(2, '0')
 // Same sentence the survey shows after submitting while report creation is paused, so the
 // admin sees exactly what participants read.
 const participantMessage = (days: number) => `Báo cáo cá nhân sẽ được gửi đến email Anh/Chị sau ${padDays(days)} ngày tới.`
-
-function BilingualField({ disabled, label, max, multiline = false, onChange, value }: { disabled: boolean; label: string; max: number; multiline?: boolean; onChange: (value: Bilingual) => void; value: Bilingual }) {
-  return (
-    <div className="quarter-bilingual">
-      {(['vi', 'en'] as const).map((lang) => (
-        <label className="roundtable-event-field quarter-field" key={lang}>
-          <span>{label} <small className="quarter-lang">{lang === 'vi' ? 'Tiếng Việt' : 'Tiếng Anh'}</small></span>
-          {multiline ? (
-            <textarea disabled={disabled} maxLength={max} onChange={(event) => onChange({ ...value, [lang]: event.currentTarget.value })} rows={3} value={value[lang]} />
-          ) : (
-            <input disabled={disabled} maxLength={max} onChange={(event) => onChange({ ...value, [lang]: event.currentTarget.value })} value={value[lang]} />
-          )}
-        </label>
-      ))}
-    </div>
-  )
-}
-
-// Head of one collapsible block: the title row opens or closes it; badges and buttons on the
-// right do not.
-function AccordionHead({ bodyId, children, kicker, onToggle, open, title }: { bodyId: string; children?: ReactNode; kicker: string; onToggle: () => void; open: boolean; title: string }) {
-  return (
-    <div className="surface-head quarter-accordion-head">
-      <h2 className="quarter-accordion-heading">
-        <button aria-controls={bodyId} aria-expanded={open} className="quarter-accordion-toggle" onClick={onToggle} type="button">
-          <ChevronDown aria-hidden="true" className="quarter-accordion-chevron" size={18} />
-          <span className="quarter-accordion-titles">
-            <span className="quarter-accordion-kicker">{kicker}</span>
-            <span className="quarter-accordion-title">{title}</span>
-          </span>
-        </button>
-      </h2>
-      {children ? <div className="quarter-head-badges">{children}</div> : null}
-    </div>
-  )
-}
-
-function sameBilingual(a: Bilingual, b: Bilingual) {
-  return a.vi === b.vi && a.en === b.en
-}
-
-function PageHeadingEditor({ canEdit, onSaved, page }: { canEdit: boolean; onSaved: (page: SurveyQuarterPageContent) => void; page: SurveyQuarterPageContent }) {
-  const [open, setOpen] = useState(false)
-  const bodyId = useId()
-  const [kicker, setKicker] = useState(page.kicker)
-  const [title, setTitle] = useState(page.title)
-  const [description, setDescription] = useState(page.description)
-  const [busy, setBusy] = useState(false)
-  const [notice, setNotice] = useState('')
-  const [error, setError] = useState('')
-  const dirty = !sameBilingual(kicker, page.kicker) || !sameBilingual(title, page.title) || !sameBilingual(description, page.description)
-
-  // Saved here or reloaded with someone else's change: show what is stored now.
-  useEffect(() => {
-    setKicker(page.kicker)
-    setTitle(page.title)
-    setDescription(page.description)
-  }, [page])
-
-  async function save() {
-    setBusy(true)
-    setNotice('')
-    setError('')
-    try {
-      const saved = await updateSurveyQuarterPage({ description, kicker, title })
-      onSaved(saved)
-      setNotice('Đã lưu. Trang khảo sát hiển thị nội dung mới trong vòng 1 phút.')
-    } catch (caught) {
-      setError(errorMessage(caught, 'Không lưu được phần đầu.'))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <section className={`content-surface quarter-editor${open ? ' is-open' : ''}`}>
-      <AccordionHead bodyId={bodyId} kicker="Phần đầu trang chọn quý" onToggle={() => setOpen((current) => !current)} open={open} title={page.title.vi}>
-        {dirty ? <span className="quarter-badge is-dirty">Chưa lưu</span> : null}
-      </AccordionHead>
-      <div className="quarter-editor-body" hidden={!open} id={bodyId}>
-        <p className="quarter-help">Hiện ở đầu trang chọn quý (trang đầu tiên khi mở khảo sát), phía trên các thẻ quý.</p>
-        <BilingualField disabled={!canEdit || busy} label="Dòng nhỏ" max={80} onChange={setKicker} value={kicker} />
-        <BilingualField disabled={!canEdit || busy} label="Tiêu đề" max={120} onChange={setTitle} value={title} />
-        <BilingualField disabled={!canEdit || busy} label="Mô tả" max={400} multiline onChange={setDescription} value={description} />
-        {canEdit ? (
-          <div className="quarter-actions">
-            <button className="primary-button" disabled={busy || !dirty} onClick={() => void save()} type="button">
-              <Save aria-hidden="true" size={16} />
-              <span>{busy ? 'Đang lưu...' : 'Lưu phần đầu'}</span>
-            </button>
-          </div>
-        ) : null}
-        {page.updatedAt ? <p className="roundtable-event-meta">Sửa lần cuối lúc {formatDateTime(page.updatedAt)}{page.updatedByEmail ? ` bởi ${page.updatedByEmail}` : ''}</p> : null}
-        {notice ? <p aria-live="polite" className="roundtable-event-notice">{notice}</p> : null}
-        {error ? <p className="roundtable-event-error" role="alert">{error}</p> : null}
-      </div>
-    </section>
-  )
-}
 
 function QuarterEditor({ canEdit, globalPaused, isCurrent, onHistory, onSaved, quarter }: { canEdit: boolean; globalPaused: boolean; isCurrent: boolean; onHistory: () => void; onSaved: (quarter: SurveyQuarterAdmin) => void; quarter: SurveyQuarterAdmin }) {
   const [open, setOpen] = useState(false)
@@ -128,7 +26,6 @@ function QuarterEditor({ canEdit, globalPaused, isCurrent, onHistory, onSaved, q
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
-  const fileRef = useRef<HTMLInputElement>(null)
 
   // Saved here or reloaded with someone else's change: show what is stored now.
   useEffect(() => {
@@ -182,8 +79,7 @@ function QuarterEditor({ canEdit, globalPaused, isCurrent, onHistory, onSaved, q
     else void save()
   }
 
-  async function uploadImage(file: File | undefined) {
-    if (!file) return
+  async function uploadImage(file: File) {
     setBusy(true)
     setNotice('')
     setError('')
@@ -194,7 +90,6 @@ function QuarterEditor({ canEdit, globalPaused, isCurrent, onHistory, onSaved, q
       setError(errorMessage(caught, 'Không tải được ảnh lên.'))
     } finally {
       setBusy(false)
-      if (fileRef.current) fileRef.current.value = ''
     }
   }
 
@@ -230,25 +125,15 @@ function QuarterEditor({ canEdit, globalPaused, isCurrent, onHistory, onSaved, q
         <p className="quarter-help">{formatNumber(quarter.submissionCount)} lượt gửi khảo sát của {label}.</p>
 
         <div className="quarter-card-layout">
-          <div className="quarter-image">
-            {quarter.imageUrl ? <img alt={`Ảnh thẻ ${label}`} src={apiUrl(quarter.imageUrl)} /> : <div className="quarter-image-empty">Chưa có ảnh riêng: trang khảo sát đang dùng ảnh mặc định.</div>}
-            {canEdit ? (
-              <div className="quarter-image-actions">
-                <input accept={SURVEY_QUARTER_IMAGE_TYPES.join(',')} hidden onChange={(event) => void uploadImage(event.currentTarget.files?.[0])} ref={fileRef} type="file" />
-                <button className="secondary-button" disabled={busy} onClick={() => fileRef.current?.click()} type="button">
-                  <ImagePlus aria-hidden="true" size={16} />
-                  <span>{quarter.imageUrl ? 'Đổi ảnh' : 'Tải ảnh lên'}</span>
-                </button>
-                {quarter.imageUrl ? (
-                  <button className="secondary-button" disabled={busy} onClick={() => void removeImage()} type="button">
-                    <Trash2 aria-hidden="true" size={16} />
-                    <span>Gỡ ảnh</span>
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
-            <p className="quarter-help">Ảnh JPG, PNG hoặc WebP, tối đa 5 MB. Ảnh luôn hiện trọn trong khung, không bị cắt. Nên dùng ảnh dưới 500 KB (ví dụ rộng khoảng 1200 px) để trang khảo sát mở nhanh.</p>
-          </div>
+          <CardImageEditor
+            alt={`Ảnh thẻ ${label}`}
+            busy={busy}
+            canEdit={canEdit}
+            emptyText="Chưa có ảnh riêng: trang khảo sát đang dùng ảnh mặc định."
+            imageUrl={quarter.imageUrl}
+            onPick={uploadImage}
+            onRemove={() => void removeImage()}
+          />
 
           <div className="quarter-fields">
             <BilingualField disabled={!canEdit || busy} label="Tiêu đề" max={120} onChange={setTitle} value={title} />
@@ -406,7 +291,15 @@ export function SurveyQuartersPage({ canEdit, tabs }: { canEdit: boolean; tabs: 
 
       {data ? (
         <>
-          <PageHeadingEditor canEdit={canEdit} onSaved={(page) => setData((current) => (current ? { ...current, page } : current))} page={data.page} />
+          <CardHeadingEditor
+            canEdit={canEdit}
+            help="Hiện ở đầu trang chọn quý (trang đầu tiên khi mở khảo sát), phía trên các thẻ quý."
+            kicker="Phần đầu trang chọn quý"
+            onSave={updateSurveyQuarterPage}
+            onSaved={(page) => setData((current) => (current ? { ...current, page } : current))}
+            page={data.page}
+            savedNotice="Đã lưu. Trang khảo sát hiển thị nội dung mới trong vòng 1 phút."
+          />
           {ordered.map((quarter) => (
             <QuarterEditor
               canEdit={canEdit}

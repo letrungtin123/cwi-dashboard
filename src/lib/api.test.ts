@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { deliveryStatus, mockFetch } from '@/test/fixtures'
-import { ApiError, MAX_UPLOAD_BYTES, uploadQuarterlyReport, uploadReportPdf } from './api'
+import { ApiError, MAX_UPLOAD_BYTES, uploadQuarterlyReportFile, uploadReportPdf } from './api'
 
 function pdf(size: number) {
   const file = new File(['%PDF'], 'bao-cao.pdf', { type: 'application/pdf' })
@@ -16,7 +16,7 @@ describe('file uploads', () => {
   it('refuses a file over the server limit before sending anything', async () => {
     const { fetchMock } = mockFetch({})
     await expect(uploadReportPdf('s-1', pdf(MAX_UPLOAD_BYTES + 1))).rejects.toMatchObject({ code: 'file_too_large', status: 413 })
-    await expect(uploadQuarterlyReport({ activate: false, file: pdf(MAX_UPLOAD_BYTES + 1), periodQuarter: 3, periodYear: 2026, subtitle: '', title: 'Q3' })).rejects.toBeInstanceOf(ApiError)
+    await expect(uploadQuarterlyReportFile('q3-2026', 'en', pdf(MAX_UPLOAD_BYTES + 1))).rejects.toBeInstanceOf(ApiError)
     expect(fetchMock).not.toHaveBeenCalled()
   })
 

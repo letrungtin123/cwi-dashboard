@@ -12,9 +12,12 @@ import type {
   WebinarRegistrationListItem,
   WebinarRegistrationStats,
   QuarterlyReportAdmin,
+  QuarterlyReportAdminList,
   QuarterlyReportDownloadFilters,
   QuarterlyReportDownloadListItem,
   QuarterlyReportDownloadStats,
+  QuarterlyReportUpdate,
+  ReportLanguage,
   SubmissionDetail,
   SubmissionFilters,
   SubmissionListItem,
@@ -332,20 +335,56 @@ export function getWebinarRegistrationDetail(id: string) {
   return request<WebinarRegistrationDetail>(`/api/v1/admin/webinar-registrations/${id}`)
 }
 
+const quarterlyReportPath = (slug: string) => `/api/v1/admin/quarterly-reports/reports/${encodeURIComponent(slug)}`
+
 export function listQuarterlyReports() {
-  return request<QuarterlyReportAdmin[]>('/api/v1/admin/quarterly-reports/reports')
+  return request<QuarterlyReportAdminList>('/api/v1/admin/quarterly-reports/reports')
 }
 
-export async function uploadQuarterlyReport(input: { activate: boolean; file: File; periodQuarter: number; periodYear: number; subtitle: string; title: string }) {
-  assertUploadSize(input.file)
+export function createQuarterlyReport(input: { periodQuarter: number; periodYear: number }) {
+  return request<QuarterlyReportAdmin>('/api/v1/admin/quarterly-reports/reports', { body: JSON.stringify(input), method: 'POST' }, { csrf: true })
+}
+
+export function updateQuarterlyReport(slug: string, input: QuarterlyReportUpdate) {
+  return request<QuarterlyReportAdmin>(quarterlyReportPath(slug), { body: JSON.stringify(input), method: 'PUT' }, { csrf: true })
+}
+
+export function updateQuarterlyReportPage(input: Pick<SurveyQuarterPageContent, 'description' | 'kicker' | 'title'>) {
+  return request<SurveyQuarterPageContent>('/api/v1/admin/quarterly-reports/page', { body: JSON.stringify(input), method: 'PUT' }, { csrf: true })
+}
+
+// The quarter's Vietnamese or English PDF; replaces the one uploaded before.
+export async function uploadQuarterlyReportFile(slug: string, language: ReportLanguage, file: File) {
+  if (!file.name.toLowerCase().endsWith('.pdf') || (file.type && file.type !== 'application/pdf')) throw new ApiError(422, 'invalid_pdf', 'Chỉ được chọn file PDF.')
+  assertUploadSize(file)
   const formData = new FormData()
-  formData.append('file', input.file, input.file.name)
-  formData.append('periodYear', String(input.periodYear))
-  formData.append('periodQuarter', String(input.periodQuarter))
-  formData.append('title', input.title)
-  formData.append('subtitle', input.subtitle)
-  formData.append('activate', String(input.activate))
-  return request<QuarterlyReportAdmin>('/api/v1/admin/quarterly-reports/reports', { body: formData, method: 'POST' }, { csrf: true, fallbackMessage: 'Không thể tải báo cáo quý lên.' })
+  formData.append('file', file, file.name)
+  return request<QuarterlyReportAdmin>(`${quarterlyReportPath(slug)}/files/${language}`, { body: formData, method: 'POST' }, { csrf: true, fallbackMessage: 'Không thể tải file PDF lên.' })
+}
+
+export function deleteQuarterlyReportFile(slug: string, language: ReportLanguage) {
+  return request<QuarterlyReportAdmin>(`${quarterlyReportPath(slug)}/files/${language}`, { method: 'DELETE' }, { csrf: true })
+}
+
+// Opens the uploaded PDF in a new tab (the signed-in session cookie is sent).
+export function quarterlyReportFileUrl(slug: string, language: ReportLanguage) {
+  return apiUrl(`${quarterlyReportPath(slug)}/files/${language}`)
+}
+
+export async function uploadQuarterlyReportImage(slug: string, file: File) {
+  if (!SURVEY_QUARTER_IMAGE_TYPES.includes(file.type)) throw new ApiError(422, 'invalid_image', 'Chỉ nhận ảnh JPG, PNG hoặc WebP.')
+  if (file.size > SURVEY_QUARTER_IMAGE_MAX_BYTES) throw new ApiError(413, 'file_too_large', 'Ảnh vượt quá 5 MB. Vui lòng chọn ảnh nhỏ hơn.')
+  const formData = new FormData()
+  formData.append('file', file, file.name)
+  return request<QuarterlyReportAdmin>(`${quarterlyReportPath(slug)}/image`, { body: formData, method: 'POST' }, { csrf: true, fallbackMessage: 'Không tải được ảnh lên.' })
+}
+
+export function deleteQuarterlyReportImage(slug: string) {
+  return request<QuarterlyReportAdmin>(`${quarterlyReportPath(slug)}/image`, { method: 'DELETE' }, { csrf: true })
+}
+
+export function getQuarterlyReportHistory(slug: string) {
+  return request<{ items: AuditEntry[] }>(`${quarterlyReportPath(slug)}/history`)
 }
 
 function buildQuarterlyReportDownloadQuery(filters: QuarterlyReportDownloadFilters) {

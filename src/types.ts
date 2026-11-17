@@ -241,6 +241,8 @@ export type SurveySource = {
   note: string | null
   // In the selected survey quarter (every quarter when none is selected).
   submissionCount: number
+  // Per survey quarter, e.g. { "2026Q3": 2, "2026Q4": 5 }.
+  submissionCountsByVersion: Record<string, number>
   // In every quarter; a source can only be deleted while this is 0.
   totalSubmissionCount: number
   updatedAt: string
@@ -249,6 +251,7 @@ export type SurveySource = {
 
 export type SurveySourceList = {
   items: SurveySource[]
+  unattributedByVersion: Record<string, number>
   unattributedSubmissions: number
 }
 
@@ -299,25 +302,49 @@ export type WebinarRegistrationDetail = RoundtableRegistrationDetail
 export type WebinarRegistrationStats = RoundtableRegistrationStats
 export type WebinarRegistrationFilters = RoundtableRegistrationFilters
 
-export type QuarterlyReportAdmin = {
+export type ReportLanguage = 'vi' | 'en'
+
+export type QuarterlyReportFileInfo = {
   fileName: string
   fileSize: number
+  uploadedAt: string
+}
+
+// One quarter of "Báo cáo quý": its card on /bao-cao-quy and its Vietnamese and English PDF.
+export type QuarterlyReportAdmin = {
+  description: Bilingual
+  // People who filled in the download form for this quarter.
+  downloadRequests: number
+  files: Record<ReportLanguage, QuarterlyReportFileInfo | null>
   id: string
-  isActive: boolean
+  imageUrl: string | null
+  // Shown on /bao-cao-quy: visible and has at least one PDF.
+  isListed: boolean
+  isVisible: boolean
+  label: Bilingual
   periodQuarter: number
   periodYear: number
   slug: string
-  subtitle: string
-  title: string
-  uploadedAt: string
-  uploadedBy: string
+  sortOrder: number
+  title: Bilingual
+  updatedAt: string
+  updatedByEmail: string | null
 }
+
+export type QuarterlyReportAdminList = {
+  page: SurveyQuarterPageContent
+  reports: QuarterlyReportAdmin[]
+}
+
+export type QuarterlyReportUpdate = Pick<QuarterlyReportAdmin, 'description' | 'isVisible' | 'sortOrder' | 'title'>
 
 export type QuarterlyReportDownloadListItem = {
   downloadCount: number
   email: string
   fullName: string
   id: string
+  // PDFs this person downloaded.
+  languages: ReportLanguage[]
   lastDownloadedAt: string | null
   phone: string
   position: string

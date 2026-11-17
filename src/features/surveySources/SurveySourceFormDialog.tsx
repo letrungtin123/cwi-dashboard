@@ -11,12 +11,17 @@ export type SurveySourceFormValues = { code: string; name: string; note: string 
 export function SurveySourceFormDialog({
   busy,
   error,
+  linkLabel,
+  linkVersion,
   onClose,
   onSubmit,
   source,
 }: {
   busy: boolean
   error: string
+  // Quarter chosen on the page for links and QR codes.
+  linkLabel: string
+  linkVersion: string
   onClose: () => void
   onSubmit: (values: SurveySourceFormValues) => void
   source: SurveySource | null
@@ -79,8 +84,8 @@ export function SurveySourceFormDialog({
           </label>
 
           <div className="survey-source-link-preview">
-            <span>Link khảo sát của nguồn này</span>
-            <code>{codeValid ? surveySourceUrl(code) : 'Nhập tên hoặc mã để xem link'}</code>
+            <span>Link khảo sát {linkLabel} của nguồn này</span>
+            <code>{codeValid ? surveySourceUrl(code, linkVersion) : 'Nhập tên hoặc mã để xem link'}</code>
           </div>
 
           {error ? <p className="report-delivery-error">{error}</p> : null}
