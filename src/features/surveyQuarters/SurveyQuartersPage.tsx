@@ -247,7 +247,7 @@ function QuarterEditor({ canEdit, globalPaused, isCurrent, onHistory, onSaved, q
                 ) : null}
               </div>
             ) : null}
-            <p className="quarter-help">Ảnh JPG, PNG hoặc WebP, tối đa 5 MB. Nên dùng ảnh ngang khoảng 1500 × 800.</p>
+            <p className="quarter-help">Ảnh JPG, PNG hoặc WebP, tối đa 5 MB. Ảnh luôn hiện trọn trong khung, không bị cắt. Nên dùng ảnh dưới 500 KB (ví dụ rộng khoảng 1200 px) để trang khảo sát mở nhanh.</p>
           </div>
 
           <div className="quarter-fields">

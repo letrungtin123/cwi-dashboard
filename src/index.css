@@ -5665,13 +5665,19 @@ tr.is-selected > td {
   gap: 10px;
 }
 
+/* Same frame as the card on the survey page: the whole picture, never cropped. */
 .quarter-image img,
 .quarter-image-empty {
-  aspect-ratio: 15 / 8;
+  aspect-ratio: 16 / 10;
   border: 1px solid var(--line);
   border-radius: 10px;
-  object-fit: cover;
   width: 100%;
+}
+
+.quarter-image img {
+  background: linear-gradient(135deg, #001a3d, #0b3d7a);
+  object-fit: contain;
+  padding: 8px 0;
 }
 
 .quarter-image-empty {
