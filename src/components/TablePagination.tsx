@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { formatNumber } from '@/lib/format'
 
 const pageSizeOptions = [10, 25, 50, 100] as const
 
@@ -13,6 +14,8 @@ type TablePaginationProps = {
   page: number
   pageSize: number
   rowCount: number
+  // Rows matching the filters across all pages; gives "Trang 2 / 15".
+  totalCount?: number
 }
 
 export function TablePagination({
@@ -24,6 +27,7 @@ export function TablePagination({
   page,
   pageSize,
   rowCount,
+  totalCount,
 }: TablePaginationProps) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -49,11 +53,20 @@ export function TablePagination({
     }
   }, [open])
 
+  const hasTotal = typeof totalCount === 'number'
+  const totalPages = hasTotal ? Math.max(1, Math.ceil(totalCount / Math.max(1, pageSize))) : null
+  const firstRow = rowCount ? (page - 1) * pageSize + 1 : 0
+  const pageLabel = totalPages ? `Trang ${formatNumber(page)} / ${formatNumber(totalPages)}` : `Trang ${page}`
+
   return (
     <div className="table-footer">
       <div className="pagination-summary">
-        <strong>Trang {page}</strong>
-        <span>{rowCount} dòng đang hiển thị</span>
+        <strong>{pageLabel}</strong>
+        <span>
+          {hasTotal
+            ? `${rowCount > 1 ? `Dòng ${formatNumber(firstRow)}–${formatNumber(firstRow + rowCount - 1)}` : `Dòng ${formatNumber(firstRow)}`} trên tổng ${formatNumber(totalCount)} dòng`
+            : `${rowCount} dòng đang hiển thị`}
+        </span>
       </div>
 
       <div className="pagination-controls">
@@ -115,7 +128,7 @@ export function TablePagination({
         >
           <ChevronLeft aria-hidden="true" size={17} />
         </button>
-        <span aria-live="polite" className="pagination-page-label">Trang {page}</span>
+        <span aria-live="polite" className="pagination-page-label">{pageLabel}</span>
         <button
           aria-label="Trang sau"
           className="pagination-arrow"

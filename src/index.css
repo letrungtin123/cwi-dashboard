@@ -1853,22 +1853,6 @@ td:nth-child(7) {
   grid-column: 1 / -1;
 }
 
-.report-generation-settings {
-  margin-bottom: 18px;
-}
-
-.report-generation-settings[data-paused="true"] {
-  border-color: #f2c48d;
-  box-shadow: 0 0 0 3px rgba(242, 160, 61, 0.12);
-}
-
-.surface-head > .report-generation-head-actions {
-  align-items: center;
-  display: flex;
-  flex: 0 0 auto;
-  gap: 8px;
-}
-
 .report-generation-state {
   border-radius: 999px;
   font-size: 12px;
@@ -1885,38 +1869,6 @@ td:nth-child(7) {
 .report-generation-state.is-off {
   background: #fff3e2;
   color: #a55a00;
-}
-
-.report-generation-body {
-  display: grid;
-  gap: 14px;
-  padding: 18px 22px 20px;
-}
-
-.report-generation-status {
-  display: grid;
-  gap: 6px;
-}
-
-.report-generation-status p {
-  color: #0b1e39;
-  font-size: 15px;
-  line-height: 1.55;
-  margin: 0;
-}
-
-.report-generation-status .report-generation-waiting {
-  color: #33465f;
-  font-size: 14px;
-}
-
-.report-generation-waiting strong {
-  color: #0b1e39;
-}
-
-.report-generation-status .report-generation-hint {
-  color: #5b6f8a;
-  font-size: 13px;
 }
 
 .report-generation-message {
@@ -1951,40 +1903,6 @@ td:nth-child(7) {
   line-height: 1.5;
 }
 
-.report-generation-days {
-  align-items: end;
-  display: flex;
-  gap: 10px;
-}
-
-.report-generation-days .roundtable-event-field {
-  width: 96px;
-}
-
-.report-generation-days > button {
-  min-height: 44px;
-}
-
-.report-generation-load-error {
-  padding: 0 22px 18px;
-}
-
-.report-generation-controls {
-  align-items: end;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 14px;
-}
-
-.report-generation-controls > button {
-  min-height: 44px;
-}
-
-.report-generation-pause {
-  border-color: #f2c48d;
-  color: #a55a00;
-}
-
 .report-generation-confirm {
   align-items: center;
   background: #fffaf2;
@@ -2014,15 +1932,6 @@ td:nth-child(7) {
 @media (max-width: 860px) {
   .roundtable-event-form {
     grid-template-columns: 1fr;
-  }
-
-  .report-generation-controls > *,
-  .report-generation-days {
-    width: 100%;
-  }
-
-  .report-generation-days > button {
-    flex: 1 1 auto;
   }
 
   .roundtable-event-footer {
@@ -5545,4 +5454,348 @@ tr.is-selected > td {
   line-height: 1.45;
   margin: 0;
   padding: 10px 12px;
+}
+
+/* Notice while the technical team has paused report creation for every quarter. */
+.report-generation-notice {
+  align-items: flex-start;
+  background: #fff7ec;
+  border: 1px solid #f2c48d;
+  border-radius: 8px;
+  color: #6b3c00;
+  display: flex;
+  font-size: 14px;
+  gap: 10px;
+  line-height: 1.55;
+  margin: 0 0 18px;
+  padding: 12px 16px;
+}
+
+.report-generation-notice svg {
+  color: #a55a00;
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.quarter-intro .report-generation-notice {
+  margin: 0 22px 18px;
+}
+
+/* Tab "Quý khảo sát". */
+.quarter-intro,
+.quarter-editor {
+  margin-bottom: 18px;
+}
+
+.quarter-editor.is-hidden {
+  background: #fbfcfe;
+}
+
+/* Each quarter block is an accordion: closed it shows only its title row and badges. */
+.quarter-accordion-head {
+  min-height: 72px;
+}
+
+.quarter-editor:not(.is-open) .quarter-accordion-head {
+  border-bottom: 0;
+}
+
+.quarter-accordion-heading {
+  flex: 1 1 auto;
+  margin: 0;
+  min-width: 0;
+}
+
+.quarter-accordion-toggle {
+  align-items: center;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  padding: 4px 6px 4px 0;
+  text-align: left;
+  width: 100%;
+}
+
+.quarter-accordion-toggle:focus-visible {
+  outline: 3px solid rgba(43, 95, 168, 0.35);
+  outline-offset: 2px;
+}
+
+.quarter-accordion-chevron {
+  color: #5b6f8a;
+  flex: 0 0 auto;
+  transform: rotate(-90deg);
+  transition: transform 160ms ease;
+}
+
+.quarter-editor.is-open .quarter-accordion-chevron {
+  transform: rotate(0deg);
+}
+
+.quarter-accordion-titles {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.quarter-accordion-kicker {
+  color: #5b6f8a;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.quarter-accordion-title {
+  color: var(--cwi-navy);
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.quarter-editor-body[hidden] {
+  display: none;
+}
+
+.quarter-editor-body {
+  display: grid;
+  gap: 14px;
+  padding: 18px 22px 20px;
+}
+
+.quarter-help {
+  color: #5b6f8a;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.surface-head > .quarter-head-badges {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.quarter-badge {
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 850;
+  padding: 5px 11px;
+  white-space: nowrap;
+}
+
+.quarter-badge.is-on {
+  background: #e7f6ef;
+  color: #13795b;
+}
+
+.quarter-badge.is-off {
+  background: #eef1f5;
+  color: #4a5b70;
+}
+
+.quarter-badge.is-paused {
+  background: #fff3e2;
+  color: #a55a00;
+}
+
+.quarter-badge.is-dirty {
+  background: #e9f0fb;
+  color: #1d4f91;
+}
+
+.quarter-badge.is-current {
+  background: #fde8e9;
+  color: #b4141d;
+}
+
+.quarter-bilingual {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.quarter-lang {
+  color: #5b6f8a;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.quarter-field textarea {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: #0b1e39;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 84px;
+  padding: 10px 12px;
+  resize: vertical;
+  width: 100%;
+}
+
+.quarter-field textarea:focus {
+  border-color: #2b5fa8;
+  box-shadow: 0 0 0 3px rgba(43, 95, 168, 0.14);
+  outline: none;
+}
+
+.quarter-field textarea:disabled {
+  background: #f5f7fa;
+  color: #5b6f8a;
+}
+
+.quarter-card-layout {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+}
+
+.quarter-image {
+  display: grid;
+  gap: 10px;
+}
+
+.quarter-image img,
+.quarter-image-empty {
+  aspect-ratio: 15 / 8;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.quarter-image-empty {
+  align-items: center;
+  background: #f5f7fa;
+  color: #5b6f8a;
+  display: flex;
+  font-size: 13px;
+  justify-content: center;
+  line-height: 1.5;
+  padding: 16px;
+  text-align: center;
+}
+
+.quarter-image-actions,
+.quarter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quarter-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.quarter-inline {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  justify-content: space-between;
+}
+
+.quarter-toggle {
+  align-items: center;
+  color: #0b1e39;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 10px;
+}
+
+/* An on/off switch (the global reset hides native checkboxes). */
+.quarter-toggle input {
+  appearance: none;
+  background: #c3ccd8;
+  border-radius: 999px;
+  cursor: pointer;
+  flex: 0 0 auto;
+  height: 22px;
+  margin: 0;
+  position: relative;
+  transition: background 160ms ease;
+  width: 40px;
+}
+
+.quarter-toggle input::after {
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(11, 30, 57, 0.25);
+  content: "";
+  height: 16px;
+  left: 3px;
+  position: absolute;
+  top: 3px;
+  transition: transform 160ms ease;
+  width: 16px;
+}
+
+.quarter-toggle input:checked {
+  background: #13795b;
+}
+
+.quarter-toggle input:checked::after {
+  transform: translateX(18px);
+}
+
+.quarter-toggle input:focus-visible {
+  outline: 3px solid rgba(43, 95, 168, 0.35);
+  outline-offset: 2px;
+}
+
+.quarter-toggle input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.quarter-order,
+.quarter-days {
+  width: 110px;
+}
+
+.quarter-report {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.quarter-report > p {
+  color: #0b1e39;
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.quarter-report-head {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+@media (max-width: 860px) {
+  .quarter-bilingual,
+  .quarter-card-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .quarter-intro .report-generation-notice {
+    margin: 0 16px 16px;
+  }
 }

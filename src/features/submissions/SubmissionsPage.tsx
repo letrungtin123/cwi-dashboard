@@ -21,7 +21,7 @@ import {
 import { ExportDataButton } from '@/components/ExportDataButton'
 import { ReportDeliveryCampaignDialog } from './ReportDeliveryCampaignDialog'
 import { ReportDeliveryFileStatus, ReportDeliveryTableCell } from './ReportDeliveryControls'
-import { ReportGenerationSettings } from './ReportGenerationSettings'
+import { ReportGenerationNotice } from './ReportGenerationNotice'
 import { CustomSelect, type SelectOption } from '@/components/CustomSelect'
 import { TablePagination } from '@/components/TablePagination'
 import { EmptyState, privacyConsentLabels, ReportBadge, ReportDownloadLink, SkeletonLine, StatsSkeleton, StatTile, StatusBadge } from '@/components/DataDisplay'
@@ -36,7 +36,8 @@ import type { ExportFilters, ReportDeliveryCampaign, ReportDeliveryStatus, Repor
 type StatusOption = 'all' | SubmissionStatus
 type ReportStatusOption = 'all' | ReportStatus
 type EmailStatusOption = 'all' | 'failed'
-type PageCursor = { before: string; beforeId: string } | null
+// The server's signed position after the last row of a page (exact to the microsecond).
+type PageCursor = string | null
 
 const defaultPageSize = 10
 const searchDebounceMs = 350
@@ -92,8 +93,7 @@ function buildSourceOptions(sources: SurveySource[]): Array<SelectOption<string>
 
 function buildFilters(search: string, status: StatusOption, reportStatus: ReportStatusOption, emailStatus: EmailStatusOption, surveyVersion: string, sourceFilter: string, limit: number, cursor: PageCursor): SubmissionFilters {
   return {
-    before: cursor?.before,
-    beforeId: cursor?.beforeId,
+    cursor: cursor ?? undefined,
     limit,
     reportStatus: reportStatus === 'all' ? undefined : reportStatus,
     emailStatus: emailStatus === 'all' ? undefined : emailStatus,
@@ -472,6 +472,7 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
   const [stats, setStats] = useState<SubmissionStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [hasNextPage, setHasNextPage] = useState(false)
+  const [totalCount, setTotalCount] = useState<number | undefined>(undefined)
   const [error, setError] = useState('')
   const [selectedId, setSelectedId] = useState('')
   const [detail, setDetail] = useState<SubmissionDetail | null>(null)
@@ -567,6 +568,7 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
       if (!isCurrent()) return
       setItems(response.items)
       setHasNextPage(response.hasNextPage)
+      setTotalCount(response.totalCount)
       if (deliveryRows) {
         setDeliveryStatuses(Object.fromEntries(deliveryRows.map((row) => [row.submissionId, row])))
       } else if (!options.silent) {
@@ -576,10 +578,7 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
         setDeliveryStatusError(deliveryError)
       }
 
-      const lastItem = response.items.at(-1)
-      const nextCursor: PageCursor = lastItem
-        ? { before: lastItem.submittedAt, beforeId: lastItem.id }
-        : null
+      const nextCursor: PageCursor = response.nextCursor
 
       setPageCursors((current) => {
         const next = current.slice(0, page + 1)
@@ -779,7 +778,7 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
       )}
       {statsError ? <p className="report-delivery-error" role="status">Không tải được số liệu thống kê: {statsError}</p> : null}
 
-      <ReportGenerationSettings canEdit={canManageContent(user?.role)} />
+      <ReportGenerationNotice />
 
       <section aria-busy={isLoading} className="content-surface" data-loading={isLoading}>
         <div className="surface-head">
@@ -847,6 +846,7 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
         {!isLoading && !error && items.length > 0 ? (
           <TablePagination
             hasNextPage={hasNextPage}
+            totalCount={totalCount}
             hasPreviousPage={page > 1}
             isLoading={isLoading}
             onPageChange={setPage}

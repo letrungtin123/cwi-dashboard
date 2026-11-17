@@ -94,6 +94,8 @@ export type CursorPage<T> = {
   hasNextPage: boolean
   items: T[]
   nextCursor: string | null
+  // Rows matching the filters across all pages.
+  totalCount: number
 }
 
 export type SubmissionStats = {
@@ -184,15 +186,49 @@ export type RoundtableEvent = {
   updatedByEmail: string | null
 }
 
-// Dashboard switch for calling cwi-ai. While off, new submissions are stored and the
-// survey says the report arrives by email within deferredResultDays.
+// Read-only: report creation paused for every quarter by the technical team (set on the
+// server), with the number of people still waiting for their report.
 export type ReportGenerationSettings = {
-  aiCallsEnabled: boolean
-  deferredResultDays: number
+  globalPaused: boolean
   unfinishedJobs: number
+}
+
+export type Bilingual = { en: string; vi: string }
+
+// One survey quarter ("Quý khảo sát"): its card under the survey intro and its own switch
+// for creating reports.
+export type SurveyQuarterAdmin = {
+  deferredResultDays: number
+  description: Bilingual
+  id: string
+  imageUrl: string | null
+  isVisible: boolean
+  label: Bilingual
+  reportGenerationEnabled: boolean
+  sortOrder: number
+  submissionCount: number
+  surveyVersion: string
+  title: Bilingual
+  updatedAt: string
+  updatedByEmail: string | null
+  waitingReports: number
+}
+
+export type SurveyQuarterPageContent = {
+  description: Bilingual
+  kicker: Bilingual
+  title: Bilingual
   updatedAt: string | null
   updatedByEmail: string | null
 }
+
+export type SurveyQuarterAdminList = {
+  globalPaused: boolean
+  page: SurveyQuarterPageContent
+  quarters: SurveyQuarterAdmin[]
+}
+
+export type SurveyQuarterUpdate = Pick<SurveyQuarterAdmin, 'deferredResultDays' | 'description' | 'isVisible' | 'reportGenerationEnabled' | 'sortOrder' | 'title'>
 
 export type SurveySource = {
   code: string

@@ -19,6 +19,10 @@ import type {
   SubmissionFilters,
   SubmissionListItem,
   SubmissionStats,
+  SurveyQuarterAdmin,
+  SurveyQuarterAdminList,
+  SurveyQuarterPageContent,
+  SurveyQuarterUpdate,
   SurveySource,
   SurveySourceList,
   ReportDeliveryCampaign,
@@ -228,8 +232,35 @@ export function getReportGenerationSettings() {
   return request<ReportGenerationSettings>('/api/v1/admin/report-generation-settings')
 }
 
-export function saveReportGenerationSettings(input: { aiCallsEnabled: boolean; deferredResultDays: number }) {
-  return request<ReportGenerationSettings>('/api/v1/admin/report-generation-settings', { body: JSON.stringify(input), method: 'PUT' }, { csrf: true })
+export function listSurveyQuarters() {
+  return request<SurveyQuarterAdminList>('/api/v1/admin/survey-quarters')
+}
+
+export function updateSurveyQuarterPage(input: Pick<SurveyQuarterPageContent, 'description' | 'kicker' | 'title'>) {
+  return request<SurveyQuarterPageContent>('/api/v1/admin/survey-quarters/page', { body: JSON.stringify(input), method: 'PUT' }, { csrf: true })
+}
+
+export function updateSurveyQuarter(surveyVersion: string, input: SurveyQuarterUpdate) {
+  return request<SurveyQuarterAdmin>(`/api/v1/admin/survey-quarters/${encodeURIComponent(surveyVersion)}`, { body: JSON.stringify(input), method: 'PUT' }, { csrf: true })
+}
+
+export const SURVEY_QUARTER_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+export const SURVEY_QUARTER_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+export async function uploadSurveyQuarterImage(surveyVersion: string, file: File) {
+  if (!SURVEY_QUARTER_IMAGE_TYPES.includes(file.type)) throw new ApiError(422, 'invalid_image', 'Chỉ nhận ảnh JPG, PNG hoặc WebP.')
+  if (file.size > SURVEY_QUARTER_IMAGE_MAX_BYTES) throw new ApiError(413, 'file_too_large', 'Ảnh vượt quá 5 MB. Vui lòng chọn ảnh nhỏ hơn.')
+  const formData = new FormData()
+  formData.append('file', file, file.name)
+  return request<SurveyQuarterAdmin>(`/api/v1/admin/survey-quarters/${encodeURIComponent(surveyVersion)}/image`, { body: formData, method: 'POST' }, { csrf: true, fallbackMessage: 'Không tải được ảnh lên.' })
+}
+
+export function deleteSurveyQuarterImage(surveyVersion: string) {
+  return request<SurveyQuarterAdmin>(`/api/v1/admin/survey-quarters/${encodeURIComponent(surveyVersion)}/image`, { method: 'DELETE' }, { csrf: true })
+}
+
+export function getSurveyQuarterHistory(surveyVersion: string) {
+  return request<{ items: AuditEntry[] }>(`/api/v1/admin/survey-quarters/${encodeURIComponent(surveyVersion)}/history`)
 }
 
 export function listSurveySources(surveyVersion?: string) {

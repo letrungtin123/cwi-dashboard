@@ -457,6 +457,7 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
   const [stats, setStats] = useState<RoundtableRegistrationStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [hasNextPage, setHasNextPage] = useState(false)
+  const [totalCount, setTotalCount] = useState<number | undefined>(undefined)
   const [error, setError] = useState('')
   const [statsError, setStatsError] = useState('')
   const pageRequestRef = useRef(0)
@@ -507,6 +508,7 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
       if (!isCurrent()) return
       setItems(response.items)
       setHasNextPage(response.hasNextPage)
+      setTotalCount(response.totalCount)
 
       const nextCursor: PageCursor = response.nextCursor
 
@@ -627,6 +629,7 @@ export function EventRegistrationPage({ kind }: { kind: EventRegistrationKind })
         {!isLoading && !error && items.length > 0 ? (
           <TablePagination
             hasNextPage={hasNextPage}
+            totalCount={totalCount}
             hasPreviousPage={page > 1}
             isLoading={isLoading}
             onPageChange={setPage}

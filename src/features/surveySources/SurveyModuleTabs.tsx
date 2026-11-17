@@ -1,10 +1,11 @@
-import { ClipboardList, QrCode } from 'lucide-react'
+import { CalendarRange, ClipboardList, QrCode } from 'lucide-react'
 
-export type SurveyModuleTab = 'submissions' | 'sources'
+export type SurveyModuleTab = 'submissions' | 'sources' | 'quarters'
 
 const tabs: Array<{ icon: typeof QrCode; label: string; value: SurveyModuleTab }> = [
   { icon: ClipboardList, label: 'Lượt gửi khảo sát', value: 'submissions' },
   { icon: QrCode, label: 'Nguồn mời', value: 'sources' },
+  { icon: CalendarRange, label: 'Quý khảo sát', value: 'quarters' },
 ]
 
 export function SurveyModuleTabs({ active, onChange }: { active: SurveyModuleTab; onChange: (tab: SurveyModuleTab) => void }) {

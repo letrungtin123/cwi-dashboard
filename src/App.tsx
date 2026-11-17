@@ -9,6 +9,7 @@ import { RoundtablePage } from './features/roundtable/RoundtablePage'
 import { SubmissionsPage } from './features/submissions/SubmissionsPage'
 import { SurveyModuleTabs, type SurveyModuleTab } from './features/surveySources/SurveyModuleTabs'
 import { SurveySourcesPage } from './features/surveySources/SurveySourcesPage'
+import { SurveyQuartersPage } from './features/surveyQuarters/SurveyQuartersPage'
 import { WebinarPage } from './features/webinar/WebinarPage'
 import { QuarterlyReportDownloadsPage } from './features/quarterlyReports/QuarterlyReportDownloadsPage'
 import { QuarterlyReportsPage } from './features/quarterlyReports/QuarterlyReportsPage'
@@ -96,9 +97,13 @@ export default function App() {
   }
 
   const currentCopy = sectionCopy[activeSection]
-  const title = activeSection === 'submissions' && surveyTab === 'sources' ? 'Nguồn mời khảo sát' : currentCopy.title
+  const title = activeSection === 'submissions' && surveyTab === 'sources'
+    ? 'Nguồn mời khảo sát'
+    : activeSection === 'submissions' && surveyTab === 'quarters' ? 'Quý khảo sát' : currentCopy.title
   const surveyTabs = <SurveyModuleTabs active={surveyTab} onChange={setSurveyTab} />
-  const surveyPage = surveyTab === 'sources'
+  const surveyPage = surveyTab === 'quarters'
+    ? <SurveyQuartersPage canEdit={canManageContent(user.role)} tabs={surveyTabs} />
+    : surveyTab === 'sources'
     ? <SurveySourcesPage canEdit={canManageContent(user.role)} onShowSubmissions={(sourceFilter) => { setSubmissionSourceFilter(sourceFilter); setSurveyTab('submissions') }} tabs={surveyTabs} />
     : <SubmissionsPage onSourceFilterChange={setSubmissionSourceFilter} sourceFilter={submissionSourceFilter} tabs={surveyTabs} />
 
