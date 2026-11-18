@@ -18,27 +18,27 @@ function errorMessage(caught: unknown, fallback: string) {
   return caught instanceof Error && caught.message ? caught.message : fallback
 }
 
-// Quarters a link can open, newest first. Without the quarter list (still loading or failed),
+// Quarters the page can show, newest first. Without the quarter list (still loading or failed),
 // only the quarter the links shared so far open.
-function buildLinkQuarterOptions(quarters: SurveyQuarterAdmin[] | null): Array<SelectOption<string>> {
+function buildQuarterOptions(quarters: SurveyQuarterAdmin[] | null): Array<SelectOption<string>> {
   if (!quarters?.length) return [{ description: 'Link đã gửi trước đây', label: shortQuarterLabel(SOURCE_LINK_DEFAULT_VERSION), value: SOURCE_LINK_DEFAULT_VERSION }]
   return [...quarters]
     .sort((a, b) => b.surveyVersion.localeCompare(a.surveyVersion))
     .map((quarter) => ({
-      description: quarter.isVisible ? 'Mở thẳng phần giới thiệu khảo sát của quý này' : 'Quý đang ẩn: link sẽ mở trang chọn quý',
+      description: quarter.isVisible ? 'Đang hiện trên trang khảo sát' : 'Quý đang ẩn: link sẽ mở trang chọn quý',
       label: quarter.label.vi,
       value: quarter.surveyVersion,
     }))
 }
 
 // Newest quarter shown on the survey page.
-function defaultLinkVersion(quarters: SurveyQuarterAdmin[]) {
+function defaultQuarter(quarters: SurveyQuarterAdmin[]) {
   return quarters.filter((quarter) => quarter.isVisible).map((quarter) => quarter.surveyVersion).sort().at(-1) ?? SOURCE_LINK_DEFAULT_VERSION
 }
 
-// "Q3/2026: 2 · Q4/2026: 5"
-function perQuarter(counts: Record<string, number>) {
-  return Object.keys(counts).sort().map((version) => `${shortQuarterLabel(version)}: ${formatNumber(counts[version] ?? 0)}`).join(' · ')
+// Shown under the selected quarter's count once there are submissions in any quarter.
+function AllQuartersCount({ total }: { total: number }) {
+  return total ? <small className="survey-source-per-quarter">Tất cả quý: {formatNumber(total)}</small> : null
 }
 
 function ConfirmDialog({ busy, confirm, error, onClose, onConfirm }: { busy: boolean; confirm: ConfirmState; error: string; onClose: () => void; onConfirm: () => void }) {
@@ -76,9 +76,12 @@ function ConfirmDialog({ busy, confirm, error, onClose, onConfirm }: { busy: boo
   )
 }
 
-export function SurveySourcesPage({ canEdit, onShowSubmissions, tabs }: { canEdit: boolean; onShowSubmissions: (sourceFilter: string) => void; tabs: ReactNode }) {
+// One quarter at a time: the counts, the last submission, "Xem danh sách" and the links all
+// follow the quarter picked at the top. Each count also shows the total of every quarter.
+export function SurveySourcesPage({ canEdit, onShowSubmissions, tabs }: { canEdit: boolean; onShowSubmissions: (sourceFilter: string, surveyVersion: string) => void; tabs: ReactNode }) {
   const [quarters, setQuarters] = useState<SurveyQuarterAdmin[] | null>(null)
-  const [linkVersion, setLinkVersion] = useState(SOURCE_LINK_DEFAULT_VERSION)
+  const [selectedVersion, setSelectedVersion] = useState(SOURCE_LINK_DEFAULT_VERSION)
+  const loadRequestRef = useRef(0)
   const [data, setData] = useState<SurveySourceList | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -88,22 +91,26 @@ export function SurveySourcesPage({ canEdit, onShowSubmissions, tabs }: { canEdi
   const [historySource, setHistorySource] = useState<SurveySource | null>(null)
   const [busy, setBusy] = useState(false)
   const [dialogError, setDialogError] = useState('')
-  const quarterOptions = useMemo(() => buildLinkQuarterOptions(quarters), [quarters])
+  const quarterOptions = useMemo(() => buildQuarterOptions(quarters), [quarters])
   const quarterLabel = (version: string) => quarterOptions.find((option) => option.value === version)?.label ?? shortQuarterLabel(version)
-  const linkLabel = quarterLabel(linkVersion)
+  const linkLabel = quarterLabel(selectedVersion)
   const defaultLinkLabel = quarterLabel(SOURCE_LINK_DEFAULT_VERSION)
 
+  // Only the latest request may update the list, so a slow answer for the previous quarter
+  // never replaces the numbers of the quarter now selected.
   const load = useCallback(async () => {
+    const request = ++loadRequestRef.current
     setIsLoading(true)
     setError('')
     try {
-      setData(await listSurveySources())
+      const result = await listSurveySources(selectedVersion)
+      if (request === loadRequestRef.current) setData(result)
     } catch (caught) {
-      setError(errorMessage(caught, 'Không tải được danh sách nguồn mời.'))
+      if (request === loadRequestRef.current) setError(errorMessage(caught, 'Không tải được danh sách nguồn mời.'))
     } finally {
-      setIsLoading(false)
+      if (request === loadRequestRef.current) setIsLoading(false)
     }
-  }, [])
+  }, [selectedVersion])
 
   useEffect(() => {
     void load()
@@ -112,7 +119,7 @@ export function SurveySourcesPage({ canEdit, onShowSubmissions, tabs }: { canEdi
   useEffect(() => {
     listSurveyQuarters().then((list) => {
       setQuarters(list.quarters)
-      setLinkVersion(defaultLinkVersion(list.quarters))
+      setSelectedVersion(defaultQuarter(list.quarters))
     }).catch(() => {
       // Without the quarter list the links open the quarter shared so far.
     })
@@ -126,7 +133,7 @@ export function SurveySourcesPage({ canEdit, onShowSubmissions, tabs }: { canEdi
 
   async function copyLink(source: SurveySource) {
     try {
-      await copyText(surveySourceUrl(source.code, linkVersion))
+      await copyText(surveySourceUrl(source.code, selectedVersion))
       setNotice(`Đã sao chép link ${linkLabel} của nguồn “${source.name}”.`)
     } catch {
       setNotice('Không thể sao chép link trên trình duyệt này.')
@@ -135,7 +142,7 @@ export function SurveySourcesPage({ canEdit, onShowSubmissions, tabs }: { canEdi
 
   async function downloadQr(source: SurveySource) {
     try {
-      await downloadQrCode(surveySourceUrl(source.code, linkVersion), surveySourceQrFileName(source.code, linkVersion))
+      await downloadQrCode(surveySourceUrl(source.code, selectedVersion), surveySourceQrFileName(source.code, selectedVersion))
       setNotice(`Đã tải mã QR ${linkLabel} của nguồn “${source.name}”.`)
     } catch {
       setNotice('Không thể tạo mã QR. Vui lòng thử lại.')
@@ -230,10 +237,10 @@ export function SurveySourcesPage({ canEdit, onShowSubmissions, tabs }: { canEdi
         </div>
 
         <div className="filter-bar survey-sources-filter">
-          <CustomSelect label="Link và mã QR cho quý" onChange={setLinkVersion} options={quarterOptions} value={linkVersion} />
+          <CustomSelect label="Quý" onChange={setSelectedVersion} options={quarterOptions} value={selectedVersion} />
         </div>
         <p className="quarter-help survey-sources-link-help">
-          Link và mã QR bên dưới mở thẳng phần giới thiệu khảo sát {linkLabel}. Link và mã QR đã gửi trước đây (không ghi quý) vẫn mở {defaultLinkLabel}, giống hệt link {defaultLinkLabel} ở đây.
+          Số bài nộp, lần nộp gần nhất và danh sách bên dưới chỉ tính {linkLabel}; dòng “Tất cả quý” là tổng mọi quý. Link và mã QR bên dưới mở thẳng phần giới thiệu khảo sát {linkLabel}. Link và mã QR đã gửi trước đây (không ghi quý) vẫn mở {defaultLinkLabel}, giống hệt link {defaultLinkLabel} ở đây.
         </p>
 
         {notice ? (
@@ -282,7 +289,7 @@ export function SurveySourcesPage({ canEdit, onShowSubmissions, tabs }: { canEdi
                   </small>
                 </div>
                 <div className="survey-source-link">
-                  <a href={surveySourceUrl(source.code, linkVersion)} rel="noreferrer" target="_blank">{surveySourceUrl(source.code, linkVersion)}</a>
+                  <a href={surveySourceUrl(source.code, selectedVersion)} rel="noreferrer" target="_blank">{surveySourceUrl(source.code, selectedVersion)}</a>
                   <div className="survey-source-link-actions">
                     <button className="mini-link-button" onClick={() => void copyLink(source)} type="button">
                       <Copy aria-hidden="true" size={14} />
@@ -296,8 +303,8 @@ export function SurveySourcesPage({ canEdit, onShowSubmissions, tabs }: { canEdi
                 </div>
                 <div className="survey-source-count">
                   <strong>{formatNumber(source.submissionCount)}</strong>
-                  {source.submissionCount ? <small className="survey-source-per-quarter">{perQuarter(source.submissionCountsByVersion)}</small> : null}
-                  <button className="survey-source-view" onClick={() => onShowSubmissions(source.id)} type="button">
+                  <AllQuartersCount total={source.totalSubmissionCount} />
+                  <button className="survey-source-view" onClick={() => onShowSubmissions(source.id, selectedVersion)} type="button">
                     <Eye aria-hidden="true" size={14} />
                     <span>Xem danh sách</span>
                   </button>
@@ -346,8 +353,8 @@ export function SurveySourcesPage({ canEdit, onShowSubmissions, tabs }: { canEdi
               <div />
               <div className="survey-source-count">
                 <strong>{formatNumber(data.unattributedSubmissions)}</strong>
-                {data.unattributedSubmissions ? <small className="survey-source-per-quarter">{perQuarter(data.unattributedByVersion)}</small> : null}
-                <button className="survey-source-view" onClick={() => onShowSubmissions('none')} type="button">
+                <AllQuartersCount total={Object.values(data.unattributedByVersion).reduce((sum, count) => sum + count, 0)} />
+                <button className="survey-source-view" onClick={() => onShowSubmissions('none', selectedVersion)} type="button">
                   <Eye aria-hidden="true" size={14} />
                   <span>Xem danh sách</span>
                 </button>
@@ -360,7 +367,7 @@ export function SurveySourcesPage({ canEdit, onShowSubmissions, tabs }: { canEdi
         ) : null}
       </section>
 
-      {form ? <SurveySourceFormDialog busy={busy} error={dialogError} key={form.source?.id ?? 'new'} linkLabel={linkLabel} linkVersion={linkVersion} onClose={closeDialogs} onSubmit={(values) => void saveForm(values)} source={form.source} /> : null}
+      {form ? <SurveySourceFormDialog busy={busy} error={dialogError} key={form.source?.id ?? 'new'} linkLabel={linkLabel} linkVersion={selectedVersion} onClose={closeDialogs} onSubmit={(values) => void saveForm(values)} source={form.source} /> : null}
       {confirm ? <ConfirmDialog busy={busy} confirm={confirm} error={dialogError} onClose={closeDialogs} onConfirm={() => void runConfirm()} /> : null}
       {historySource ? <SurveySourceHistoryDialog onClose={() => setHistorySource(null)} source={historySource} /> : null}
     </main>

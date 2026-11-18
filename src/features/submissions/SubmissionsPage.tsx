@@ -66,16 +66,19 @@ const emailStatusOptions: Array<SelectOption<EmailStatusOption>> = [
 ]
 
 // Quarters come from the stored submissions, so a new question set appears
-// here as soon as its first submission is saved.
-function buildSurveyVersionOptions(stats: SubmissionStats | null): Array<SelectOption<string>> {
-  return [
-    { description: 'Hiển thị lượt gửi của mọi bộ câu hỏi', label: 'Tất cả quý', value: 'all' },
-    ...(stats?.surveyVersions ?? []).map((version) => ({
-      description: `${formatNumber(version.totalSubmissions)} lượt gửi`,
-      label: `Bộ ${version.surveyVersion}`,
-      value: version.surveyVersion,
-    })),
-  ]
+// here as soon as its first submission is saved. The selected quarter stays listed even
+// before then (opened from "Nguồn mời" for a quarter with no submissions yet).
+function buildSurveyVersionOptions(stats: SubmissionStats | null, selected: string): Array<SelectOption<string>> {
+  const versions = (stats?.surveyVersions ?? []).map((version) => ({
+    description: `${formatNumber(version.totalSubmissions)} lượt gửi`,
+    label: `Bộ ${version.surveyVersion}`,
+    value: version.surveyVersion,
+  }))
+  if (selected !== 'all' && !versions.some((version) => version.value === selected)) {
+    versions.push({ description: 'Chưa có lượt gửi', label: `Bộ ${selected}`, value: selected })
+    versions.sort((a, b) => a.value.localeCompare(b.value))
+  }
+  return [{ description: 'Hiển thị lượt gửi của mọi bộ câu hỏi', label: 'Tất cả quý', value: 'all' }, ...versions]
 }
 
 // 'none' lists submissions that came without a source link.
@@ -456,7 +459,13 @@ function SubmissionDetailDrawer({
   )
 }
 
-export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { onSourceFilterChange: (value: string) => void; sourceFilter: string; tabs: ReactNode }) {
+export function SubmissionsPage({ onSourceFilterChange, onSurveyVersionChange, sourceFilter, surveyVersion, tabs }: {
+  onSourceFilterChange: (value: string) => void
+  onSurveyVersionChange: (value: string) => void
+  sourceFilter: string
+  surveyVersion: string
+  tabs: ReactNode
+}) {
   const { user } = useAuth()
   const [sources, setSources] = useState<SurveySource[]>([])
   const [draftSearch, setDraftSearch] = useState('')
@@ -464,7 +473,6 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
   const [status, setStatus] = useState<StatusOption>('all')
   const [reportStatus, setReportStatus] = useState<ReportStatusOption>('all')
   const [emailStatus, setEmailStatus] = useState<EmailStatusOption>('all')
-  const [surveyVersion, setSurveyVersion] = useState('all')
   const [pageSize, setPageSize] = useState(defaultPageSize)
   const [page, setPage] = useState(1)
   const [pageCursors, setPageCursors] = useState<Array<PageCursor>>([null])
@@ -516,7 +524,7 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
   const filters = useMemo(() => buildFilters(search, status, reportStatus, emailStatus, surveyVersion, sourceFilter, pageSize, cursor), [cursor, emailStatus, pageSize, reportStatus, search, sourceFilter, status, surveyVersion])
   const sourceOptions = useMemo(() => buildSourceOptions(sources), [sources])
   const statsSurveyVersion = surveyVersion === 'all' ? undefined : surveyVersion
-  const surveyVersionOptions = useMemo(() => buildSurveyVersionOptions(stats), [stats])
+  const surveyVersionOptions = useMemo(() => buildSurveyVersionOptions(stats, surveyVersion), [stats, surveyVersion])
   const exportFilters = useMemo<ExportFilters>(() => ({
     emailStatus: emailStatus === 'all' ? undefined : emailStatus,
     reportStatus: reportStatus === 'all' ? undefined : reportStatus,
@@ -561,7 +569,8 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
       let deliveryRows: ReportDeliveryStatus[] | null = null
       let deliveryError = ''
       try {
-        deliveryRows = await getReportDeliveryStatuses(response.items.map((item) => item.id))
+        // An empty page has no statuses to ask for (the server rejects an empty list).
+        deliveryRows = response.items.length ? await getReportDeliveryStatuses(response.items.map((item) => item.id)) : []
       } catch (caught) {
         deliveryError = caught instanceof Error ? caught.message : "Không tải được trạng thái file PDF."
       }
@@ -812,7 +821,7 @@ export function SubmissionsPage({ onSourceFilterChange, sourceFilter, tabs }: { 
               value={draftSearch}
             />
           </div>
-          <CustomSelect label="Quý khảo sát" onChange={(next) => { setSurveyVersion(next); setPage(1); setPageCursors([null]) }} options={surveyVersionOptions} value={surveyVersion} />
+          <CustomSelect label="Quý khảo sát" onChange={(next) => { onSurveyVersionChange(next); setPage(1); setPageCursors([null]) }} options={surveyVersionOptions} value={surveyVersion} />
           <CustomSelect label="Trạng thái" onChange={(next) => { setStatus(next); setPage(1); setPageCursors([null]) }} options={statusOptions} value={status} />
           <CustomSelect label="Báo cáo" onChange={(next) => { setReportStatus(next); setPage(1); setPageCursors([null]) }} options={reportStatusOptions} value={reportStatus} />
           <CustomSelect label="Email" onChange={(next) => { setEmailStatus(next); setPage(1); setPageCursors([null]) }} options={emailStatusOptions} value={emailStatus} />

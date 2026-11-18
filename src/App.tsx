@@ -44,6 +44,8 @@ export default function App() {
   const [surveyTab, setSurveyTab] = useState<SurveyModuleTab>('submissions')
   // 'all', 'none' or a source id; kept here so "Xem danh sách" on a source opens the filtered list.
   const [submissionSourceFilter, setSubmissionSourceFilter] = useState('all')
+  // 'all' or a survey quarter, e.g. '2026Q4'; "Xem danh sách" on a source also opens its quarter.
+  const [submissionVersionFilter, setSubmissionVersionFilter] = useState('all')
   const [changingPassword, setChangingPassword] = useState(false)
 
   // A different account (or the same one after signing in again) starts from the default screen,
@@ -53,6 +55,7 @@ export default function App() {
     setActiveSection('submissions')
     setSurveyTab('submissions')
     setSubmissionSourceFilter('all')
+    setSubmissionVersionFilter('all')
     setChangingPassword(false)
   }, [userId])
 
@@ -104,8 +107,8 @@ export default function App() {
   const surveyPage = surveyTab === 'quarters'
     ? <SurveyQuartersPage canEdit={canManageContent(user.role)} tabs={surveyTabs} />
     : surveyTab === 'sources'
-    ? <SurveySourcesPage canEdit={canManageContent(user.role)} onShowSubmissions={(sourceFilter) => { setSubmissionSourceFilter(sourceFilter); setSurveyTab('submissions') }} tabs={surveyTabs} />
-    : <SubmissionsPage onSourceFilterChange={setSubmissionSourceFilter} sourceFilter={submissionSourceFilter} tabs={surveyTabs} />
+    ? <SurveySourcesPage canEdit={canManageContent(user.role)} onShowSubmissions={(sourceFilter, surveyVersion) => { setSubmissionSourceFilter(sourceFilter); setSubmissionVersionFilter(surveyVersion); setSurveyTab('submissions') }} tabs={surveyTabs} />
+    : <SubmissionsPage onSourceFilterChange={setSubmissionSourceFilter} onSurveyVersionChange={setSubmissionVersionFilter} sourceFilter={submissionSourceFilter} surveyVersion={submissionVersionFilter} tabs={surveyTabs} />
 
   return (
     <>
