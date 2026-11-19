@@ -188,7 +188,9 @@ function DrawerSkeleton() {
 }
 
 
-const NOT_DELETABLE_TOOLTIP = 'Chỉ xóa được lượt gửi đang “Chờ tạo báo cáo” (chưa có PDF báo cáo).'
+// Some rows read "Chờ tạo báo cáo" but cannot be deleted: their report was already sent off to be
+// created (or exists), so the tooltip says that instead of pointing at the label.
+const NOT_DELETABLE_TOOLTIP = 'Không xóa được: lượt gửi này đã được chuyển đi tạo báo cáo hoặc đã có báo cáo.'
 
 // Tick box for super admins; only rows whose report is still waiting can be ticked.
 function RowSelectBox({ checked, item, onToggle }: { checked: boolean; item: SubmissionListItem; onToggle: (id: string) => void }) {
@@ -220,7 +222,7 @@ function SubmissionTable({ deliveryStatuses, items, onDeliveryChange, onReportRe
               <th>
                 {selection ? (
                   <span className="row-select-head">
-                    <span className="row-select-wrap" data-tooltip={deletableIds.length ? 'Chọn tất cả lượt gửi đang chờ tạo báo cáo ở trang này' : 'Trang này không có lượt gửi nào xóa được'}>
+                    <span className="row-select-wrap" data-tooltip={deletableIds.length ? 'Chọn tất cả lượt gửi xóa được ở trang này' : 'Trang này không có lượt gửi nào xóa được'}>
                       <input aria-label="Chọn tất cả lượt gửi xóa được ở trang này" checked={allSelected} className="row-select-box" disabled={!deletableIds.length} onChange={selection.onToggleAll} type="checkbox" />
                     </span>
                     Người gửi

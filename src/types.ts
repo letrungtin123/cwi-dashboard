@@ -47,7 +47,7 @@ export type SubmissionSource = {
 export type SubmissionListItem = {
   answersCount: number
   companyName: string | null
-  // A super admin may delete it: its report is still "Chờ tạo báo cáo" (no PDF).
+  // A super admin may delete it: report creation is paused for its quarter and its report was never sent off to be created (no PDF, no email).
   deletable: boolean
   email: string
   fullName: string
