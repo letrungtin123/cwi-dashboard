@@ -33,6 +33,7 @@ import type {
 } from '@/types'
 import type { ExportDataset, ExportFilters, ExportJob } from '@/types'
 import type { AdminAccount, AdminAccountWithPassword, AdminRole, AuditEntry, SubmissionDeletionItem } from '@/types'
+import type { NewsCategory, NewsCategoryInput, NewsPostAdmin, NewsPostInput, NewsPostList, NewsStatusFilter } from '@/types'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8080').replace(/\/+$/, '')
 const CSRF_COOKIE_NAME = import.meta.env.VITE_CSRF_COOKIE_NAME ?? 'cwi_admin_csrf'
@@ -449,4 +450,63 @@ export function retryReportEmail(id: string) {
 
 export function retryReportGeneration(id: string) {
   return request<{ jobId: string | null; status: string; submissionId: string }>(`/api/v1/admin/survey-submissions/${encodeURIComponent(id)}/retry-report`, { method: 'POST' }, { csrf: true })
+}
+
+// ---- News ("Tin tức") ----------------------------------------------------------------
+
+const NEWS_BASE = '/api/v1/admin/news'
+
+export function listNewsCategories() {
+  return request<{ items: NewsCategory[] }>(`${NEWS_BASE}/categories`)
+}
+
+export function createNewsCategory(input: NewsCategoryInput) {
+  return request<NewsCategory>(`${NEWS_BASE}/categories`, { body: JSON.stringify(input), method: 'POST' }, { csrf: true })
+}
+
+export function updateNewsCategory(id: string, input: NewsCategoryInput) {
+  return request<NewsCategory>(`${NEWS_BASE}/categories/${encodeURIComponent(id)}`, { body: JSON.stringify(input), method: 'PUT' }, { csrf: true })
+}
+
+export function deleteNewsCategory(id: string) {
+  return request<{ deleted: boolean }>(`${NEWS_BASE}/categories/${encodeURIComponent(id)}`, { method: 'DELETE' }, { csrf: true })
+}
+
+export function getNewsCategoryHistory(id: string) {
+  return request<{ items: AuditEntry[] }>(`${NEWS_BASE}/categories/${encodeURIComponent(id)}/history`)
+}
+
+export function listNewsPosts(filters: { categoryId: string; page: number; pageSize: number; search: string; status: NewsStatusFilter }) {
+  const params = new URLSearchParams({ page: String(filters.page), pageSize: String(filters.pageSize), status: filters.status })
+  if (filters.categoryId !== 'all') params.set('categoryId', filters.categoryId)
+  if (filters.search.trim()) params.set('search', filters.search.trim())
+  return request<NewsPostList>(`${NEWS_BASE}/posts?${params.toString()}`)
+}
+
+export function getNewsPost(id: string) {
+  return request<NewsPostAdmin>(`${NEWS_BASE}/posts/${encodeURIComponent(id)}`)
+}
+
+export function createNewsPost(input: NewsPostInput) {
+  return request<NewsPostAdmin>(`${NEWS_BASE}/posts`, { body: JSON.stringify(input), method: 'POST' }, { csrf: true, fallbackMessage: 'Không lưu được bài viết.' })
+}
+
+export function updateNewsPost(id: string, input: NewsPostInput) {
+  return request<NewsPostAdmin>(`${NEWS_BASE}/posts/${encodeURIComponent(id)}`, { body: JSON.stringify(input), method: 'PUT' }, { csrf: true, fallbackMessage: 'Không lưu được bài viết.' })
+}
+
+export function deleteNewsPost(id: string) {
+  return request<{ deleted: boolean }>(`${NEWS_BASE}/posts/${encodeURIComponent(id)}`, { method: 'DELETE' }, { csrf: true })
+}
+
+export function getNewsPostHistory(id: string) {
+  return request<{ items: AuditEntry[] }>(`${NEWS_BASE}/posts/${encodeURIComponent(id)}/history`)
+}
+
+export async function uploadNewsImage(file: Blob, fileName: string) {
+  if (!SURVEY_QUARTER_IMAGE_TYPES.includes(file.type)) throw new ApiError(422, 'invalid_image', 'Chỉ nhận ảnh JPG, PNG hoặc WebP.')
+  if (file.size > SURVEY_QUARTER_IMAGE_MAX_BYTES) throw new ApiError(413, 'file_too_large', 'Ảnh vượt quá 5 MB. Vui lòng chọn ảnh nhỏ hơn.')
+  const formData = new FormData()
+  formData.append('file', file, fileName)
+  return request<{ id: string; url: string }>(`${NEWS_BASE}/images`, { body: formData, method: 'POST' }, { csrf: true, fallbackMessage: 'Không tải được ảnh lên.' })
 }

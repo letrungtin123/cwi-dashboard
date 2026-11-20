@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { RefreshCw, WifiOff } from 'lucide-react'
 import { DashboardShell, type DashboardSection } from './components/DashboardShell'
@@ -17,6 +17,9 @@ import { canManageContent, isSuperadmin } from './lib/roles'
 import { AdminUsersPage } from './features/adminUsers/AdminUsersPage'
 import { ChangePasswordDialog } from './features/auth/ChangePasswordDialog'
 
+// The news editor (TipTap) is large; it loads the first time "Tin tức" is opened.
+const NewsAdminPage = lazy(() => import('./features/news/NewsAdminPage').then((module) => ({ default: module.NewsAdminPage })))
+
 const sectionCopy: Record<DashboardSection, { title: string }> = {
   roundtable: {
     title: 'Danh sách đăng ký Roundtable',
@@ -29,6 +32,9 @@ const sectionCopy: Record<DashboardSection, { title: string }> = {
   },
   quarterlyReportDownloads: {
     title: 'Danh sách tải báo cáo quý',
+  },
+  news: {
+    title: 'Tin tức',
   },
   submissions: {
     title: 'Lượt gửi khảo sát',
@@ -120,7 +126,7 @@ export default function App() {
         title={title}
         user={user}
       >
-        {activeSection === 'adminUsers' && isSuperadmin(user.role) ? <AdminUsersPage /> : activeSection === 'roundtable' ? <RoundtablePage /> : activeSection === 'webinar' ? <WebinarPage /> : activeSection === 'quarterlyReports' ? <QuarterlyReportsPage /> : activeSection === 'quarterlyReportDownloads' ? <QuarterlyReportDownloadsPage /> : surveyPage}
+        {activeSection === 'adminUsers' && isSuperadmin(user.role) ? <AdminUsersPage /> : activeSection === 'roundtable' ? <RoundtablePage /> : activeSection === 'webinar' ? <WebinarPage /> : activeSection === 'quarterlyReports' ? <QuarterlyReportsPage /> : activeSection === 'quarterlyReportDownloads' ? <QuarterlyReportDownloadsPage /> : activeSection === 'news' ? <Suspense fallback={<main className="dashboard-main"><p className="survey-sources-empty">Đang tải Tin tức...</p></main>}><NewsAdminPage canEdit={canManageContent(user.role)} /></Suspense> : surveyPage}
       </DashboardShell>
       {changingPassword ? <ChangePasswordDialog onClose={() => setChangingPassword(false)} /> : null}
       <TooltipLayer />

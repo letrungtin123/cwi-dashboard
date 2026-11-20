@@ -428,3 +428,84 @@ export type ReportDeliveryCampaign = {
   totalUsers: number
   expiresAt: string
 }
+
+// ---- News ("Tin tức") ----------------------------------------------------------------
+
+export type NewsPostStatus = 'draft' | 'published' | 'hidden'
+export type NewsStatusFilter = 'all' | NewsPostStatus | 'scheduled'
+
+// A post body as the editor keeps it (TipTap JSON); the server checks and cleans it.
+export type NewsDoc = { content?: unknown[]; type: 'doc' }
+
+export type NewsCategory = {
+  createdAt: string
+  description: Bilingual
+  id: string
+  isVisible: boolean
+  name: Bilingual
+  postCount: number
+  publicPostCount: number
+  slug: string
+  sortOrder: number
+  updatedAt: string
+  updatedByEmail: string | null
+}
+
+export type NewsCategoryInput = {
+  description: Bilingual
+  isVisible: boolean
+  name: Bilingual
+  slug?: string
+  sortOrder: number
+}
+
+export type NewsPostListItem = {
+  category: { id: string; name: Bilingual }
+  coverImageId: string | null
+  hasEnglish: boolean
+  id: string
+  isPinned: boolean
+  publishedAt: string | null
+  slug: string
+  status: NewsPostStatus
+  title: Bilingual
+  updatedAt: string
+  updatedBy: AdminPerson
+  viewCount: number
+}
+
+export type NewsPostList = { items: NewsPostListItem[]; page: number; pageSize: number; total: number }
+
+export type NewsPostFields = {
+  author: Bilingual
+  categoryId: string
+  content: { en: NewsDoc; vi: NewsDoc }
+  coverAlt: Bilingual
+  coverImageId: string | null
+  excerpt: Bilingual
+  isPinned: boolean
+  publishedAt: string | null
+  seoDescription: Bilingual
+  seoTitle: Bilingual
+  slug: string
+  source: { name: string; url: string }
+  status: NewsPostStatus
+  tags: { en: string[]; vi: string[] }
+  title: Bilingual
+}
+
+export type NewsPostInput = NewsPostFields & { version?: number }
+
+export type NewsPostAdmin = Omit<NewsPostFields, 'categoryId'> & {
+  category: { id: string; isVisible: boolean; name: Bilingual; slug: string }
+  coverUrl: string | null
+  createdAt: string
+  createdBy: AdminPerson
+  id: string
+  previousSlugs: string[]
+  readingMinutes: { en: number; vi: number }
+  updatedAt: string
+  updatedBy: AdminPerson
+  version: number
+  viewCount: number
+}

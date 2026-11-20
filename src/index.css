@@ -4220,6 +4220,12 @@ tbody tr:hover {
   text-transform: uppercase;
 }
 
+/* A group label after a menu list ("Hệ thống") keeps clear of the item above it, which may be
+   the highlighted one with its glow. */
+.sidebar-nav + .sidebar-section-label {
+  margin-top: 22px;
+}
+
 .sidebar-nav {
   gap: 6px;
 }
