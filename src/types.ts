@@ -437,10 +437,12 @@ export type NewsStatusFilter = 'all' | NewsPostStatus | 'scheduled'
 // A post body as the editor keeps it (TipTap JSON); the server checks and cleans it.
 export type NewsDoc = { content?: unknown[]; type: 'doc' }
 
-export type NewsShareSettings = { copyLink: boolean; facebook: boolean; linkedin: boolean; native: boolean }
+export type NewsSocialNetwork = 'facebook' | 'linkedin' | 'youtube' | 'zalo'
+export type NewsSocialLink = { on: boolean; url: string }
+// "Tin tức" -> "Cài đặt": CWI's page on each network (icon shown when on) and the copy-link icon.
+export type NewsPageSettings = { copyLink: boolean; social: Record<NewsSocialNetwork, NewsSocialLink> }
 
-export type NewsSettings = {
-  share: NewsShareSettings
+export type NewsSettings = NewsPageSettings & {
   updatedAt: string | null
   updatedByEmail: string | null
 }

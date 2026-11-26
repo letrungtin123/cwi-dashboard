@@ -1711,18 +1711,103 @@
   }
 }
 
-/* ---- Settings (share buttons) ------------------------------------------------------- */
+/* ---- Settings (icons beside a post: CWI's pages + copy link) ----------------------- */
 
 .news-settings-body {
   display: grid;
-  gap: 16px;
+  gap: 22px;
   padding: 18px 22px 22px;
+}
+
+.news-settings-group {
+  display: grid;
+  gap: 10px;
 }
 
 .news-settings-title {
   color: #10223f;
   font-size: 16px;
   margin: 0;
+}
+
+.news-settings-lead {
+  color: #5b6b82;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: -4px 0 2px;
+}
+
+.news-social-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.news-social-field label strong {
+  color: #10223f;
+  font-size: 15px;
+}
+
+.news-social-input {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  max-width: 620px;
+}
+
+.news-social-input input {
+  background: #fbfdff;
+  border: 1px solid #c4d8ef;
+  border-radius: 8px;
+  color: #0b1e39;
+  flex: 1 1 auto;
+  font: inherit;
+  font-size: 14px;
+  min-height: 40px;
+  min-width: 0;
+  padding: 8px 12px;
+}
+
+.news-social-input input:focus {
+  background: #fff;
+  border-color: #2087ce;
+  box-shadow: 0 0 0 3px rgba(32, 135, 206, 0.12);
+  outline: none;
+}
+
+.news-social-input input[aria-invalid="true"] {
+  border-color: #e0868a;
+}
+
+.news-social-input input:disabled {
+  background: #f3f6fa;
+  color: #5b6b82;
+}
+
+.news-social-input input::placeholder {
+  color: #9aa8bb;
+}
+
+.news-social-open {
+  background: #fff;
+  border: 1px solid #c4d8ef;
+  color: #17416f;
+  flex: 0 0 auto;
+  height: 40px;
+  width: 40px;
+}
+
+.news-social-open:hover {
+  background: #f1f7fd;
+  border-color: #2087ce;
+}
+
+.news-settings-preview-divider {
+  align-self: center;
+  background: #cfd9e6;
+  height: 22px;
+  margin: 0 4px;
+  width: 1px;
 }
 
 .news-settings-list {
