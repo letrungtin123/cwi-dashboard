@@ -437,6 +437,14 @@ export type NewsStatusFilter = 'all' | NewsPostStatus | 'scheduled'
 // A post body as the editor keeps it (TipTap JSON); the server checks and cleans it.
 export type NewsDoc = { content?: unknown[]; type: 'doc' }
 
+export type NewsShareSettings = { copyLink: boolean; facebook: boolean; linkedin: boolean; native: boolean }
+
+export type NewsSettings = {
+  share: NewsShareSettings
+  updatedAt: string | null
+  updatedByEmail: string | null
+}
+
 export type NewsCategory = {
   createdAt: string
   description: Bilingual

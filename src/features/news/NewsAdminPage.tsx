@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { FileText, FolderTree } from 'lucide-react'
+import { FileText, FolderTree, Settings } from 'lucide-react'
 import { deleteNewsPost, listNewsCategories } from '@/lib/api'
 import type { NewsCategory } from '@/types'
 import { errorMessage } from '@/features/surveyQuarters/cardEditorParts'
@@ -7,14 +7,16 @@ import { NewsCategoriesTab } from './NewsCategoriesTab'
 import { NewsConfirmDialog } from './NewsConfirmDialog'
 import { NewsPostEditor } from './NewsPostEditor'
 import { NewsPostsTab } from './NewsPostsTab'
+import { NewsSettingsTab } from './NewsSettingsTab'
 import './news.css'
 
-type Tab = 'posts' | 'categories'
+type Tab = 'posts' | 'categories' | 'settings'
 
 function NewsTabs({ active, onChange }: { active: Tab; onChange: (tab: Tab) => void }) {
   const tabs: Array<{ icon: typeof FileText; label: string; value: Tab }> = [
     { icon: FileText, label: 'Bài viết', value: 'posts' },
     { icon: FolderTree, label: 'Chuyên mục', value: 'categories' },
+    { icon: Settings, label: 'Cài đặt', value: 'settings' },
   ]
   return (
     <nav aria-label="Mục trong Tin tức" className="survey-module-tabs">
@@ -28,7 +30,7 @@ function NewsTabs({ active, onChange }: { active: Tab; onChange: (tab: Tab) => v
   )
 }
 
-// Dashboard "Tin tức": posts and categories. Admins and super admins write; viewers see the lists.
+// Dashboard "Tin tức": posts, categories and settings (share buttons). Admins and super admins write; viewers see the lists.
 export function NewsAdminPage({ canEdit }: { canEdit: boolean }) {
   const [tab, setTab] = useState<Tab>('posts')
   const [editing, setEditing] = useState<{ id: string | null } | null>(null)
@@ -106,7 +108,9 @@ export function NewsAdminPage({ canEdit }: { canEdit: boolean }) {
 
   return (
     <>
-      {tab === 'categories' ? (
+      {tab === 'settings' ? (
+        <NewsSettingsTab canEdit={canEdit} tabs={tabs} />
+      ) : tab === 'categories' ? (
         <NewsCategoriesTab canEdit={canEdit} categories={categories} error={categoriesError} loading={categoriesLoading} onChanged={loadCategories} onReload={() => void loadCategories()} tabs={tabs} />
       ) : (
         <NewsPostsTab

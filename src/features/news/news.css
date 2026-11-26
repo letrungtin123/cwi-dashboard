@@ -1710,3 +1710,151 @@
     grid-column: 1 / -1;
   }
 }
+
+/* ---- Settings (share buttons) ------------------------------------------------------- */
+
+.news-settings-body {
+  display: grid;
+  gap: 16px;
+  padding: 18px 22px 22px;
+}
+
+.news-settings-title {
+  color: #10223f;
+  font-size: 16px;
+  margin: 0;
+}
+
+.news-settings-list {
+  border: 1px solid #dfe7f1;
+  border-radius: 10px;
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.news-settings-row {
+  align-items: center;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 14px 16px;
+}
+
+.news-settings-row + .news-settings-row {
+  border-top: 1px solid #edf2f8;
+}
+
+.news-settings-row.is-off .news-settings-icon,
+.news-settings-row.is-off .news-settings-text {
+  opacity: 0.55;
+}
+
+.news-settings-icon {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #dbe4ef;
+  border-radius: 50%;
+  color: #10223f;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+
+.news-settings-icon.is-preview {
+  height: 34px;
+  width: 34px;
+}
+
+.news-settings-text {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.news-settings-text strong {
+  color: #10223f;
+  font-size: 15px;
+}
+
+.news-settings-text small {
+  color: #5b6b82;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* The state text keeps one width so the switches line up. */
+.news-settings-toggle span {
+  color: #44546a;
+  font-size: 13px;
+  min-width: 66px;
+}
+
+.news-settings-preview {
+  align-items: center;
+  background: #f5f8fc;
+  border-radius: 10px;
+  color: #44546a;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 14px;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.news-settings-preview-buttons {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.news-settings-preview em {
+  color: #8a5a00;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.news-settings-footer {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.news-settings-footer small {
+  color: #5b6b82;
+  font-size: 13px;
+}
+
+.news-settings-actions {
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .news-settings-body {
+    padding: 14px 14px 18px;
+  }
+
+  .news-settings-row {
+    align-items: start;
+    gap: 10px 12px;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .news-settings-toggle {
+    grid-column: 2;
+  }
+
+  .news-settings-actions {
+    width: 100%;
+  }
+
+  .news-settings-actions button {
+    flex: 1;
+    justify-content: center;
+  }
+}

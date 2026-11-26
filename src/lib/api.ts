@@ -33,7 +33,7 @@ import type {
 } from '@/types'
 import type { ExportDataset, ExportFilters, ExportJob } from '@/types'
 import type { AdminAccount, AdminAccountWithPassword, AdminRole, AuditEntry, SubmissionDeletionItem } from '@/types'
-import type { NewsCategory, NewsCategoryInput, NewsPostAdmin, NewsPostInput, NewsPostList, NewsStatusFilter } from '@/types'
+import type { NewsCategory, NewsCategoryInput, NewsPostAdmin, NewsPostInput, NewsPostList, NewsSettings, NewsShareSettings, NewsStatusFilter } from '@/types'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8080').replace(/\/+$/, '')
 const CSRF_COOKIE_NAME = import.meta.env.VITE_CSRF_COOKIE_NAME ?? 'cwi_admin_csrf'
@@ -455,6 +455,14 @@ export function retryReportGeneration(id: string) {
 // ---- News ("Tin tức") ----------------------------------------------------------------
 
 const NEWS_BASE = '/api/v1/admin/news'
+
+export function getNewsSettings() {
+  return request<NewsSettings>(`${NEWS_BASE}/settings`)
+}
+
+export function saveNewsSettings(share: NewsShareSettings) {
+  return request<NewsSettings>(`${NEWS_BASE}/settings`, { body: JSON.stringify({ share }), method: 'PUT' }, { csrf: true })
+}
 
 export function listNewsCategories() {
   return request<{ items: NewsCategory[] }>(`${NEWS_BASE}/categories`)
