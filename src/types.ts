@@ -72,6 +72,8 @@ export type SubmissionListItem = {
 export type SubmissionAnswer = {
   answerText: string
   answerValue: unknown
+  // Follow-up question shown under a scale answer of 1 or 5, with the respondent's answer.
+  followUp?: { answer: string; question: string } | null
   idx: number
   otherText: string | null
   part: number

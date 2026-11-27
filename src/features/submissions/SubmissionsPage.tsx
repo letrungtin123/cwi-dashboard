@@ -448,6 +448,12 @@ function SubmissionDetailDrawer({
                       <h4>{answer.questionText}</h4>
                       <p>{answer.answerText || valueToText(answer.answerValue)}</p>
                       {answer.otherText ? <em>{answer.otherText}</em> : null}
+                      {answer.followUp ? (
+                        <div className="answer-follow-up">
+                          <span>Câu hỏi phụ · {answer.followUp.question}</span>
+                          <p>{answer.followUp.answer}</p>
+                        </div>
+                      ) : null}
                     </div>
                   </article>
                 ))}
